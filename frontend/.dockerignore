@@ -1,0 +1,12 @@
+node_modules
+.next
+coverage
+*.tsbuildinfo
+.env*
+npm-debug.log*
+Dockerfile
+.dockerignore
+# Testler repo kökündeki backend seed JSON'unu içe aktarıyor; ./frontend bağlamında o yol yok
+# ve `next build` tip kontrolü kırılmasın diye testler imaja girmez (testler CI/yerelde koşar).
+**/*.test.ts
+vitest.config.mts

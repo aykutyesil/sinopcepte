@@ -1,0 +1,46 @@
+# SinopCepte — yerel geliştirme / tek sunucu kurulumu
+# Kullanım: cp .env.example .env  (değerleri doldur)  &&  docker compose up --build
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: sinopcepte
+      POSTGRES_USER: ${DB_USERNAME:-sinopcepte}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD .env içinde tanımlı olmalı}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-sinopcepte} -d sinopcepte"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/sinopcepte
+      DB_USERNAME: ${DB_USERNAME:-sinopcepte}
+      DB_PASSWORD: ${DB_PASSWORD}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      TZ: Europe/Istanbul
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
+
+  frontend:
+    build: ./frontend
+    environment:
+      BACKEND_URL: http://backend:8080
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:3000"
+
+volumes:
+  db-data:

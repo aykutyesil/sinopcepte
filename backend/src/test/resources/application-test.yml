@@ -1,0 +1,7 @@
+# Yalnız testler. Ağdan eczane çekme kapalı; admin bilgileri test amaçlıdır (gerçek ortamda kullanılmaz).
+app:
+  pharmacy:
+    fetch-enabled: false
+  admin:
+    username: test-admin
+    password: test-admin-parola-123
