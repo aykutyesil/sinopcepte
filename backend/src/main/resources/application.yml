@@ -17,8 +17,12 @@ spring:
 
 server:
   port: ${PORT:8080}
-  # nginx / Next.js arkasında X-Forwarded-* başlıklarına güven
-  forward-headers-strategy: framework
+  # X-Forwarded-* başlıklarını Tomcat RemoteIpValve işler: başlığa YALNIZ doğrudan bağlanan taraf iç vekilse
+  # (varsayılan: 10/8, 172.16/12, 192.168/16, 127/8, 100.64/10, ::1, fc00::/7 ...) güvenir ve zinciri
+  # SAĞDAN sola okur, ilk iç olmayan adresi istemci sayar. Böylece istemcinin sola yazdığı sahte IP işe yaramaz.
+  # ("framework" stratejisi en soldaki değeri koşulsuz alıyordu → hız sınırı aşılıyordu; ölçüldü.)
+  # İç vekil listesini değiştirmek için: SERVER_TOMCAT_REMOTEIP_INTERNALPROXIES (Java regex).
+  forward-headers-strategy: native
   servlet:
     session:
       timeout: 8h
@@ -40,7 +44,8 @@ app:
     # Kayıtta onaylanan aydınlatma metni sürümü (app_user.kvkk_version). Metin değişince artırın.
     version: ${KVKK_VERSION:taslak-1}
   rate-limit:
-    # IP başına (request.getRemoteAddr(); vekil arkasında X-Forwarded-For'un en soldaki değeri).
+    # IP başına (request.getRemoteAddr(); RemoteIpValve'ın çözdüğü gerçek istemci, yukarıya bakın).
+    # Canlıda kenar vekil (nginx/) X-Forwarded-For'u $remote_addr ile EZMELİ, istemcinin değerini eklememeli.
     login:          # pencere içinde izin verilen BAŞARISIZ giriş sayısı; dolunca 429
       max: ${LOGIN_RATE_LIMIT_MAX:10}
       window: ${LOGIN_RATE_LIMIT_WINDOW:10m}

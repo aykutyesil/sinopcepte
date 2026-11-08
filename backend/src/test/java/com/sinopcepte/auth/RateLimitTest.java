@@ -8,7 +8,7 @@ import com.sinopcepte.TestHttp;
 
 /**
  * IP başına hız sınırı. Test profilinde: giriş 3 başarısız / 10 dk, kayıt 3 / saat.
- * IP = X-Forwarded-For (server.forward-headers-strategy=framework).
+ * IP = X-Forwarded-For'un sağdan ilk iç olmayan girdisi (server.forward-headers-strategy=native, test istemcisi 127.0.0.1 = iç vekil).
  */
 class RateLimitTest extends UserTestSupport {
 
@@ -50,6 +50,25 @@ class RateLimitTest extends UserTestSupport {
         // Başka IP etkilenmez (sayaç IP başına, X-Forwarded-For'a göre)
         TestHttp other = clientFrom(TestHttp.nextIp());
         assertThat(other.sendWithCsrf("POST", "/api/auth/login", loginJson(handle, PASSWORD)).status()).isEqualTo(200);
+    }
+
+    /**
+     * Saldırgan X-Forwarded-For'un soluna her denemede başka sahte IP yazar; vekil gerçek IP'yi sağa ekler.
+     * Sayaç sağdaki (güvenilir vekilin yazdığı) IP'ye göre tutulmalı → sınır aşılamaz.
+     */
+    @Test
+    void spoofedLeftmostForwardedForDoesNotBypassLimit() {
+        String handle = uniqueHandle("sahte");
+        registered(handle, PASSWORD);
+        String realIp = TestHttp.nextIp();
+
+        for (int i = 0; i < LOGIN_MAX; i++) {
+            String chain = TestHttp.nextIp() + ", " + realIp;
+            assertThat(clientFrom(chain).sendWithCsrf("POST", "/api/auth/login", loginJson(handle, "yanlis-" + i)).status())
+                    .as("deneme %d", i + 1).isEqualTo(401);
+        }
+        assert429(clientFrom(TestHttp.nextIp() + ", " + realIp)
+                .sendWithCsrf("POST", "/api/auth/login", loginJson(handle, PASSWORD)));
     }
 
     @Test

@@ -30,8 +30,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
+    # Dışarıya port açılmaz: X-Forwarded-For'a yalnız iç ağdan gelen isteklerde güvenilir.
+    # Doğrudan erişim gerekiyorsa (hata ayıklama) geçici olarak: docker compose port / exec kullanın.
 
   frontend:
     build: ./frontend
@@ -39,8 +39,16 @@ services:
       BACKEND_URL: http://backend:8080
     depends_on:
       - backend
+    # Dışarıya port açılmaz; trafik nginx üzerinden gelir.
+
+  nginx:
+    image: nginx:1.29-alpine
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
     ports:
-      - "127.0.0.1:${FRONTEND_PORT:-3000}:3000"
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:80"
 
 volumes:
   db-data:

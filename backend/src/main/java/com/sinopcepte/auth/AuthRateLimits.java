@@ -9,10 +9,10 @@ import org.springframework.stereotype.Component;
 /**
  * Giriş ve kayıt için IP başına sınırlar.
  *
- * <p>IP = {@code request.getRemoteAddr()}. {@code server.forward-headers-strategy=framework} olduğundan
- * bu değer {@code X-Forwarded-For}'un <b>en soldaki</b> girdisidir. Bu yüzden önündeki vekil
- * (nginx vb.) başlığı istemciden geleni eklemeden, kendisi <b>yazmalıdır</b>
- * ({@code proxy_set_header X-Forwarded-For $remote_addr;}); aksi halde istemci sahte IP ile sınırı aşar.
+ * <p>IP = {@code request.getRemoteAddr()}. {@code server.forward-headers-strategy=native} ile bu değeri Tomcat
+ * RemoteIpValve belirler: {@code X-Forwarded-For} yalnız iç vekilden gelirse dikkate alınır ve zincir sağdan
+ * okunur; ilk iç olmayan adres istemcidir. Kenardaki nginx başlığı {@code $remote_addr} ile ezer
+ * ({@code nginx/nginx.conf}). Next.js rewrite başlığı olduğu gibi iletir, gerçek IP eklemez (ölçüldü).
  */
 @Component
 public class AuthRateLimits {

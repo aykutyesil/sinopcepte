@@ -1,15 +1,15 @@
 # İlerleme
 
-## Faz 2 / N7 — kullanıcı giriş & profil: tamamlandı, 1 açık risk (2026-11-08)
+## Faz 2 / N7 — kullanıcı giriş & profil: tamamlandı (2026-11-08)
 
-- **Grafik:** N7a (backend), N7b (frontend), N7c (bütünleştirme) geçti. Hız sınırı güvenilirliği **kaldı** (aşağıda). N8, N9, N10 bekliyor.
+- **Grafik:** N7a, N7b, N7c geçti. Hız sınırı açığı ikinci denemede kapandı (nginx kenarı + RemoteIpValve). N8, N9, N10 bekliyor.
 - **Çıktılar:** `backend/` V10 migration + kayıt/giriş/profil/şifre/silme/hız sınırı (53 test); `frontend/` `/giris`, `/kayit`, `/profil`, `/u/[handle]`, `/kvkk` (TASLAK) + dock hesap düğmesi (76 test); `scripts/smoke.mjs --n7` (34 kontrol).
 - **Kararlar:** misafir = hesapsız gezinme; avatar sabit listeden; e-posta doğrulama/şifre sıfırlama yok; ADMIN profili herkese kapalı (404).
 - **Bekleyenler:**
-  - **Hız sınırı sahte `X-Forwarded-For` ile aşılıyor** (ölçüldü). Güvenilir proxy ya da yalnız güvenilir hop'u okuma gerekiyor.
+  - Canlıda HTTPS sonlandırma nginx'te yapılacaksa sertifika ayarı ve `SESSION_COOKIE_SECURE=true` gerekli (yapılmadı).
   - Şifre değişince diğer cihazlardaki oturumlar kapanmıyor; hız sınırı sayaçları bellekte (yeniden başlatınca sıfırlanır).
   - KVKK metni ve onay kutusu ifadesi hukukçu kontrolünden geçmeli.
-- **Sonraki adım:** Hız sınırı düzeltmesi, ardından N8 / N9 / N10 (paralel).
+- **Sonraki adım:** N8 / N9 / N10 (paralel; ayrı Flyway aralıkları V20/V30/V40).
 
 ## Faz 1 — tamamlandı (2026-11-08)
 

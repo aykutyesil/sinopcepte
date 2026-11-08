@@ -71,7 +71,9 @@ public final class TestHttp {
     /** 10.x.y.z biçiminde, süreç içinde tekil bir IP. */
     public static String nextIp() {
         int n = NEXT_IP.getAndIncrement();
-        return "10." + ((n >> 16) & 0xff) + "." + ((n >> 8) & 0xff) + "." + (n & 0xff);
+        // 198.18.0.0/15 (RFC 2544, kamuya yönlendirilmez ama "özel ağ" da sayılmaz): Tomcat RemoteIpValve
+        // bunu gerçek istemci olarak görür. 10.x olsaydı iç vekil sayılıp atlanırdı.
+        return "198." + (18 + ((n >> 16) & 1)) + "." + ((n >> 8) & 0xff) + "." + (n & 0xff);
     }
 
     public String ip() {
