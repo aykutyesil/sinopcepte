@@ -1,0 +1,23 @@
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Node / Package managers (if used in future)
+node_modules/
+npm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp

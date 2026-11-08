@@ -1,0 +1,29 @@
+name: Günlük Nöbetçi Eczane Güncelleyici
+
+on:
+  schedule:
+    # Her sabah 05:30 UTC (TSİ 08:30)
+    - cron: '30 5 * * *'
+  workflow_dispatch: # Manuel tetikleme butonu
+
+permissions:
+  contents: write
+
+jobs:
+  update-pharmacy:
+    runs-on: windows-latest
+    steps:
+      - name: Depoyu Klonla
+        uses: actions/checkout@v4
+
+      - name: Nöbetçi Eczaneyi Çek ve Güncelle
+        shell: pwsh
+        run: |
+          ./update-pharmacy.ps1
+
+      - name: Değişiklikleri Kaydet ve Pushla
+        run: |
+          git config --global user.name "SinopCepte Bot"
+          git config --global user.email "bot@sinopcepte.local"
+          git add -A
+          git diff-index --quiet HEAD || (git commit -m "chore(auto): Günlük nöbetçi eczane otomatik güncellendi [skip ci]" && git push)

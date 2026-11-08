@@ -1,0 +1,1003 @@
+﻿<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SinopCepte | Bento Grid Dashboard & Şehir OS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"Space Grotesk"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <script>
+    (function() {
+      const saved = localStorage.getItem('sinopcepte_theme');
+      if (saved === 'light') {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+      } else {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+      }
+    })();
+  </script>
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    .bento-card {
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .bento-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.4);
+    }
+    /* Animated Soundwave */
+    .wave-bar {
+      animation: soundwave 1.2s ease-in-out infinite alternate;
+    }
+    .wave-bar:nth-child(2) { animation-delay: 0.2s; }
+    .wave-bar:nth-child(3) { animation-delay: 0.4s; }
+    .wave-bar:nth-child(4) { animation-delay: 0.1s; }
+    @keyframes soundwave {
+      0% { height: 6px; }
+      100% { height: 26px; }
+    }
+  </style>
+</head>
+<body class="bg-[#0b0f19] text-slate-100 font-sans antialiased selection:bg-indigo-500 selection:text-white min-h-screen p-3 sm:p-6 lg:p-8 flex flex-col justify-between">
+
+  <div class="max-w-7xl mx-auto w-full">
+
+    <!-- 1. BENTO HEADER & COMMAND BAR -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      
+      <!-- Brand & Admin Clicker -->
+      <div class="flex items-center space-x-3 cursor-pointer select-none" onclick="handleSecretClick()" title="Yönetici Girişi İçin 3 Tık">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-0.5 shadow-lg">
+          <div class="w-full h-full bg-[#0e1424] rounded-[14px] flex items-center justify-center font-mono font-bold text-lg text-white">
+            ⚡
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xl sm:text-2xl font-black tracking-tight text-white">
+              Sinop<span class="text-indigo-400">OS</span>
+            </span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold uppercase">
+              Bento OS v3.0
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 font-medium">Modüler Şehir & Esnaf Kontrol Paneli</p>
+        </div>
+      </div>
+
+      <!-- Live Search & Filter Bar in Header -->
+      <div class="flex-1 max-w-xl mx-0 md:mx-4 relative">
+        <div class="bg-[#12192c] border border-slate-800 rounded-2xl px-4 py-2.5 flex items-center gap-2 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 shadow-inner">
+          <svg class="w-4 h-4 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          <input 
+            type="text" 
+            id="bentoSearchInput" 
+            oninput="handleSearch(this.value)" 
+            placeholder="Şehirde ara: Galatasaray maçı, DJ Burkay, Taksi, Tekel, Eczane..." 
+            class="w-full bg-transparent border-0 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none"
+          >
+          <button id="searchClearBtn" onclick="clearSearch()" class="hidden text-slate-400 hover:text-white text-xs px-1">✕</button>
+        </div>
+
+        <!-- Search Results Dropdown -->
+        <div id="searchDropdown" class="hidden absolute top-full left-0 right-0 mt-2 bg-[#12192c]/98 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl z-50 max-h-80 overflow-y-auto divide-y divide-slate-800"></div>
+      </div>
+
+      <!-- Right System Stats -->
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink min-w-0 justify-end">
+        <div class="inline-flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-2xl bg-[#12192c] border border-slate-800 text-xs shrink-0" title="Sinop Canlı Hava Durumu">
+          <span id="navWeatherIcon">🌤️</span>
+          <span class="font-mono font-bold text-white text-[10px] sm:text-xs whitespace-nowrap" id="navWeatherText">
+            <span class="hidden sm:inline">Sinop </span><span id="navWeatherTemp">9.5°C</span>
+          </span>
+        </div>
+        <button onclick="toggleTheme()" class="p-2 sm:p-2.5 rounded-2xl bg-[#12192c] border border-slate-800 hover:border-slate-700 text-xs transition shrink-0" title="Görünüm Modu">
+          <span id="themeToggleIcon">🌙</span>
+        </button>
+      </div>
+
+    </header>
+
+    <!-- 2. ASYMMETRIC BENTO GRID TILES -->
+    <main class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+
+      <!-- ==========================================
+           TILE 1 (Large 2x2): CANLI SAHNE & MAÇ RADARI
+           ========================================== -->
+      <div class="bento-card md:col-span-2 lg:col-span-2 md:row-span-2 rounded-3xl p-6 bg-gradient-to-br from-[#161c36] via-[#10152a] to-[#0c1020] border border-pink-500/30 shadow-2xl relative overflow-hidden flex flex-col justify-between">
+        <div class="absolute -right-16 -top-16 w-52 h-52 bg-pink-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div>
+          <!-- Tile Header -->
+          <div class="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
+            <div class="flex items-center gap-2.5">
+              <span class="flex h-3 w-3 relative">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-pink-500"></span>
+              </span>
+              <div>
+                <h2 class="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+                  Canlı Sahne & Maç Radarı
+                  <span class="text-[9px] font-mono px-2 py-0.5 rounded bg-pink-500 text-white font-bold uppercase tracking-wider">CANLI</span>
+                </h2>
+                <p class="text-xs text-slate-400 mt-0.5">Sinop'un mekanlarında bu akşam gerçekleşen programlar</p>
+              </div>
+            </div>
+
+            <!-- Animated Soundwave -->
+            <div class="flex items-end gap-1 h-6">
+              <span class="wave-bar w-1 bg-pink-500 rounded-full h-2"></span>
+              <span class="wave-bar w-1 bg-cyan-400 rounded-full h-5"></span>
+              <span class="wave-bar w-1 bg-purple-500 rounded-full h-3"></span>
+              <span class="wave-bar w-1 bg-amber-400 rounded-full h-6"></span>
+            </div>
+          </div>
+
+          <!-- Event Tabs Selector -->
+          <div id="eventTabsNav" class="flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-4"></div>
+
+          <!-- Active Event Big Hero Display -->
+          <div id="activeEventDisplay" class="bg-[#0b0e1e]/80 border border-white/10 rounded-2xl p-5 shadow-inner"></div>
+        </div>
+
+        <!-- Event Action Bar -->
+        <div id="activeEventActions" class="mt-4 pt-4 border-t border-white/10 flex items-center justify-between gap-3"></div>
+      </div>
+
+      <!-- ==========================================
+           TILE 2 (Wide 2x1): NÖBETÇİ ECZANE ACİL JET KARTI
+           ========================================== -->
+      <div class="bento-card md:col-span-1 lg:col-span-2 rounded-3xl p-5 bg-gradient-to-r from-rose-950/60 to-[#141224] border border-rose-500/40 shadow-xl flex flex-col justify-between relative overflow-hidden">
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-xl shrink-0">
+              💊
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] font-mono font-bold text-rose-400 uppercase tracking-widest">Sinop Merkez Nöbetçi Eczanesi</span>
+                <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+              </div>
+              <h3 id="bentoPharmacyName" class="text-lg sm:text-xl font-black text-white mt-0.5">Elif Eczanesi</h3>
+              <p id="bentoPharmacyAddress" class="text-xs text-slate-300 mt-1 line-clamp-1">Kaleyazısı Mahallesi, Sakarya Caddesi, No:77/B Merkez / Sinop</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono bg-rose-500/20 text-rose-300 border border-rose-500/40 px-2 py-0.5 rounded-lg shrink-0">
+            SABAHA KADAR AÇIK
+          </span>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-rose-500/20 flex items-center gap-2.5">
+          <a 
+            id="bentoPharmacyMapBtn" 
+            href="https://www.google.com/maps?daddr=42.0257925,35.1457768" 
+            target="_blank" 
+            class="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs text-center shadow-lg transition flex items-center justify-center gap-1.5"
+          >
+            <span>📍 Google Haritalar'da Yol Tarifi Al</span>
+            <span>→</span>
+          </a>
+          <a 
+            id="bentoPharmacyPhoneBtn" 
+            href="tel:03682617236" 
+            class="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition flex items-center gap-1.5"
+          >
+            <span>📞 Ara</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- ==========================================
+           TILE 3 (1x1): SİNOP CANLI HAVA VE LİMAN DURUMU
+           ========================================== -->
+      <div class="bento-card rounded-3xl p-5 bg-[#12182c] border border-slate-800 shadow-xl flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-mono uppercase text-cyan-400 font-bold">Liman & Hava Radarı</span>
+          <span class="text-2xl" id="tileWeatherEmoji">🌤️</span>
+        </div>
+        <div class="my-3">
+          <span class="text-3xl sm:text-4xl font-mono font-black text-white" id="tileWeatherTemp">9.5°C</span>
+          <p class="text-xs text-slate-400 mt-1" id="tileWeatherCity">Sinop Yarımadası</p>
+        </div>
+        <div class="text-[11px] text-slate-400 pt-2 border-t border-slate-800 flex justify-between font-mono">
+          <span>Rüzgar: Karayel</span>
+          <span class="text-emerald-400">● Canlı Veri</span>
+        </div>
+      </div>
+
+      <!-- ==========================================
+           TILE 4 (1x1): ÇİÇEK & HEDİYE WHATSAPP
+           ========================================== -->
+      <div class="bento-card rounded-3xl p-5 bg-[#12182c] border border-slate-800 shadow-xl flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-mono uppercase text-pink-400 font-bold">Çiçek & Hediye</span>
+          <span class="text-2xl">💐</span>
+        </div>
+        <div>
+          <h4 class="font-black text-base text-white">Sinop Çiçek Siparişi</h4>
+          <p class="text-xs text-slate-400 mt-1 line-clamp-2">Gül buketleri, orkideler, teraryum ve adrese teslimat.</p>
+        </div>
+        <a href="https://wa.me/905445552001?text=SinopCepte%20üzerinden%20çiçek%20siparişi%20vermek%20istiyorum" target="_blank" class="mt-2 py-2 px-3 rounded-xl bg-pink-600/20 hover:bg-pink-600 text-pink-300 hover:text-white border border-pink-500/30 text-xs font-bold text-center transition">
+          WhatsApp'tan Sipariş Ver →
+        </a>
+      </div>
+
+      <!-- ==========================================
+           TILE 5 (Wide 2x1): 7/24 NÖBETÇİ TAKSİ HIZLI ÇAĞIR
+           ========================================== -->
+      <div class="bento-card md:col-span-2 rounded-3xl p-5 bg-[#12182c] border border-amber-500/30 shadow-xl flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🚖</span>
+            <div>
+              <h3 class="font-black text-base text-white">7/24 Sinop Taksi Durakları</h3>
+              <p class="text-xs text-slate-400">Tek dokunuşla durağa doğrudan bağlanın</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-lg">
+            3 DURAK HAZIR
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <a href="tel:03682611010" class="p-3 rounded-2xl bg-[#0b0f1d] hover:bg-amber-400 hover:text-slate-950 text-white border border-slate-800 transition group flex flex-col justify-between">
+            <div>
+              <span class="text-[10px] font-mono text-amber-400 group-hover:text-slate-900 font-bold">MERKEZ</span>
+              <p class="font-bold text-xs mt-0.5">Meydan Taksi</p>
+            </div>
+            <p class="text-[11px] font-mono mt-2 font-bold opacity-80">📞 0368 261 10 10</p>
+          </a>
+
+          <a href="tel:03682612020" class="p-3 rounded-2xl bg-[#0b0f1d] hover:bg-amber-400 hover:text-slate-950 text-white border border-slate-800 transition group flex flex-col justify-between">
+            <div>
+              <span class="text-[10px] font-mono text-amber-400 group-hover:text-slate-900 font-bold">İSKELE / SAHİL</span>
+              <p class="font-bold text-xs mt-0.5">İskele Sahil Taksi</p>
+            </div>
+            <p class="text-[11px] font-mono mt-2 font-bold opacity-80">📞 0368 261 20 20</p>
+          </a>
+
+          <a href="tel:03682613030" class="p-3 rounded-2xl bg-[#0b0f1d] hover:bg-amber-400 hover:text-slate-950 text-white border border-slate-800 transition group flex flex-col justify-between">
+            <div>
+              <span class="text-[10px] font-mono text-amber-400 group-hover:text-slate-900 font-bold">OTOGAR</span>
+              <p class="font-bold text-xs mt-0.5">Otogar Birlik Taksi</p>
+            </div>
+            <p class="text-[11px] font-mono mt-2 font-bold opacity-80">📞 0368 261 30 30</p>
+          </a>
+        </div>
+      </div>
+
+      <!-- ==========================================
+           TILE 6 (Wide 2x1): GECE AÇIK TEKEL & BÜFELER (EVE SERVİS)
+           ========================================== -->
+      <div class="bento-card md:col-span-2 rounded-3xl p-5 bg-[#12182c] border border-emerald-500/30 shadow-xl flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🏪</span>
+            <div>
+              <h3 class="font-black text-base text-white">Gece Açık Tekel & Büfeler</h3>
+              <p class="text-xs text-slate-400">Soğuk içecekler, kuruyemiş ve adrese hızlı kurye servisi</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-lg">
+            GECE AÇIK
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div class="p-3 rounded-2xl bg-[#0b0f1d] border border-slate-800 flex flex-col justify-between">
+            <div>
+              <p class="font-bold text-xs text-white">Deniz Tekel & Meze</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">İskele Caddesi</p>
+            </div>
+            <a href="https://wa.me/905445551001?text=Sipariş%20vermek%20istiyorum" target="_blank" class="mt-2 py-1 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] text-center transition">
+              Sipariş (WhatsApp)
+            </a>
+          </div>
+
+          <div class="p-3 rounded-2xl bg-[#0b0f1d] border border-slate-800 flex flex-col justify-between">
+            <div>
+              <p class="font-bold text-xs text-white">Karakum Sahil Market</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">Karakum Yolu (7/24)</p>
+            </div>
+            <a href="https://wa.me/905445551002?text=Sipariş%20vermek%20istiyorum" target="_blank" class="mt-2 py-1 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] text-center transition">
+              Sipariş (WhatsApp)
+            </a>
+          </div>
+
+          <div class="p-3 rounded-2xl bg-[#0b0f1d] border border-slate-800 flex flex-col justify-between">
+            <div>
+              <p class="font-bold text-xs text-white">Meydan Tekel & Büfe</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">Hükümet Meydanı</p>
+            </div>
+            <a href="https://wa.me/905445551003?text=Sipariş%20vermek%20istiyorum" target="_blank" class="mt-2 py-1 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] text-center transition">
+              Sipariş (WhatsApp)
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==========================================
+           TILE 7 (Wide 4 Columns): POPÜLER MEKANLAR VİTRİNİ
+           ========================================== -->
+      <div class="bento-card md:col-span-3 lg:col-span-4 rounded-3xl p-6 bg-[#12182c] border border-slate-800 shadow-2xl">
+        <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🍸</span>
+            <div>
+              <h3 class="font-black text-lg text-white">Sinop Kafe, Pub & Restoran Rehberi</h3>
+              <p class="text-xs text-slate-400">Şehrin en çok tercih edilen buluşma noktaları</p>
+            </div>
+          </div>
+          <button onclick="openAdminModal()" class="admin-only hidden px-3 py-1 rounded-xl bg-amber-400 text-slate-950 font-bold text-xs">
+            + Yeni Mekan Ekle
+          </button>
+        </div>
+
+        <div id="bentoVenuesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="mt-8 pt-6 border-t border-slate-800 text-center text-xs text-slate-500 font-mono">
+      <p onclick="handleSecretClick()" class="cursor-pointer select-none">SINOP OS • Bento Grid Dashboard Sürümü</p>
+    </footer>
+
+  </div>
+
+  <!-- ADMIN FLOATING BAR -->
+  <div id="adminFloatingBar" class="hidden fixed bottom-5 right-5 z-50 flex items-center gap-2 bg-[#12192c] border border-indigo-500 text-white shadow-2xl rounded-2xl px-4 py-2">
+    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+    <span class="text-xs font-mono font-bold">Admin OS Aktif</span>
+    <button onclick="openAdminModal()" class="text-xs font-bold px-2.5 py-1 bg-indigo-500 text-white rounded-lg ml-1">Panel</button>
+    <button onclick="adminLogout()" class="text-xs text-slate-400 hover:text-rose-400 ml-1">Çıkış</button>
+  </div>
+
+  <!-- ŞİFRELİ GİRİŞ MODALI -->
+  <div id="loginModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-[#12192c] border border-slate-800 rounded-3xl max-w-sm w-full p-6 space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base text-white">Admin Girişi</h3>
+        <button onclick="closeLoginModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+      <input type="password" id="adminPassInput" placeholder="Şifrenizi yazın" onkeydown="if(event.key==='Enter') verifyAdminLogin()" class="w-full bg-[#0a0d17] border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+      <p id="loginError" class="text-xs text-rose-500 hidden">Hatalı şifre!</p>
+      <button onclick="verifyAdminLogin()" class="w-full py-2.5 rounded-xl bg-indigo-500 text-white font-bold text-sm">Giriş Yap</button>
+    </div>
+  </div>
+
+  <!-- YÖNETİM PANELİ MODALI -->
+  <div id="adminPanelModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-[#12192c] border border-slate-800 rounded-3xl max-w-2xl w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+        <h3 class="font-bold text-lg text-white">SinopOS Bento Yönetim Paneli</h3>
+        <button onclick="closeAdminPanel()" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <h4 class="font-bold text-indigo-400">+ Yeni Kayıt Ekle (Etkinlik veya İşletme)</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Başlık / Etkinlik Adı</label>
+            <input type="text" id="adminTitle" placeholder="Örn: Galatasaray - Amed Maçı veya DJ Burkay" class="w-full bg-[#090c17] border border-slate-800 rounded-xl p-2.5 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Kategori / Alan</label>
+            <select id="adminCategory" class="w-full bg-[#090c17] border border-slate-800 rounded-xl p-2.5 text-white">
+              <option value="etkinlik">🔥 Canlı Sahne & Maç Yayını</option>
+              <option value="mekan">🍸 Mekan & Kafe</option>
+              <option value="tekel">🏪 Tekel & Gece Açık</option>
+              <option value="taksi">🚖 Taksi Durağı</option>
+              <option value="eczane">💊 Nöbetçi Eczane</option>
+              <option value="cicek">💐 Çiçek & Hediye</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Rozet / Zaman</label>
+            <input type="text" id="adminBadge" placeholder="Örn: ⚽ CANLI MAÇ veya Bugün • 20:00" class="w-full bg-[#090c17] border border-slate-800 rounded-xl p-2.5 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Mekan / Konum</label>
+            <input type="text" id="adminLocation" placeholder="Örn: İskele Caddesi" class="w-full bg-[#090c17] border border-slate-800 rounded-xl p-2.5 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Telefon</label>
+            <input type="text" id="adminPhone" placeholder="Örn: 05441234567" class="w-full bg-[#090c17] border border-slate-800 rounded-xl p-2.5 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">WhatsApp No</label>
+            <input type="text" id="adminWa" placeholder="Örn: 905441234567" class="w-full bg-[#090c17] border border-slate-800 rounded-xl p-2.5 text-white">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-slate-400 mb-1">Açıklama</label>
+            <input type="text" id="adminDesc" placeholder="Program açıklaması..." class="w-full bg-[#090c17] border border-slate-800 rounded-xl p-2.5 text-white">
+          </div>
+        </div>
+        <button onclick="saveAdminItem()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition">Kaydet ve Bento Paneline Ekle</button>
+      </div>
+
+      <div class="pt-4 border-t border-slate-800">
+        <h4 class="font-bold text-slate-400 text-xs mb-2">Kayıtlı Canlı Etkinlikler & Mekanlar</h4>
+        <div id="adminItemList" class="space-y-1.5 max-h-52 overflow-y-auto text-xs"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const defaultLiveEvents = [
+      {
+        id: 'ev-1',
+        title: 'Galatasaray - Amed SK Canlı Maç Yayını',
+        venue: 'Nihavent Restaurant Pub',
+        location: 'İskele Caddesi',
+        date: 'Bugün Canlı • 20:00',
+        badge: '⚽ CANLI MAÇ YAYINI',
+        desc: 'Dev projeksiyon ve yüksek ses sistemiyle maç coşkusu! Zengin fıçı bira çeşitleri ve sıcak pub lezzetleri. Maç için önceden masa rezervasyonu önerilir.',
+        wa: '905555555555'
+      },
+      {
+        id: 'ev-2',
+        title: 'Burkay Bahadır ile DJ Performans',
+        venue: "Mathiday's Social",
+        location: 'Liman Sahil',
+        date: 'Bu Gece • 22:30',
+        badge: '🎧 BURKAY BAHADIR DJ',
+        desc: 'Burkay Bahadır kabinde! Liman manzarası eşliğinde ritmik deep house/nu-disco setleri, şık lounge atmosferi ve imza miksoloji kokteylleri.',
+        wa: '905555555555'
+      },
+      {
+        id: 'ev-3',
+        title: 'Akustik Canlı Rock Gecesi',
+        venue: 'Joker Pub',
+        location: 'Barlar Sokağı',
+        date: 'Bu Akşam • 21:30',
+        badge: '🎸 CANLI ROCK SAHNESİ',
+        desc: 'Sinop Barlar Sokağı\'nda sevilen 90\'lar Türkçe rock ve akustik parçalarla canlı performans gecesi. Giriş ücretsizdir.',
+        wa: '905555555555'
+      },
+      {
+        id: 'ev-4',
+        title: 'Tarihi Kalede Akustik Ezgiler & Türkü',
+        venue: 'Kale Burç Cafe Bar',
+        location: 'Tarihi Sinop Kalesi',
+        date: 'Bu Akşam • 20:30',
+        badge: '🏰 KALEDE CANLI MÜZİK',
+        desc: 'Sinop Kalesi surlarında eşsiz deniz manzarası eşliğinde bağlama ve akustik gitar dinletisi. Sıcak kahve ve pub içecekleri.',
+        wa: '905555555555'
+      }
+    ];
+
+    const defaultData = [
+      {
+        id: 'm-1',
+        category: 'mekan',
+        title: "Mathiday's Social",
+        badge: '🍸 Kokteyl & DJ',
+        location: '📍 Liman Mevkii',
+        desc: 'Burkay Bahadır DJ performansları, liman manzaralı imza kokteyller ve sahil lounge atmosferi.',
+        phone: '05445555001',
+        wa: '905555555555',
+        rating: '4.9'
+      },
+      {
+        id: 'm-2',
+        category: 'mekan',
+        title: 'Nihavent Restaurant Pub',
+        badge: '⚽ Maç & 🍺 Pub',
+        location: '📍 İskele Caddesi',
+        desc: 'Galatasaray - Amed SK maçı dev ekranda! Zengin fıçı biralar, sıcak pub tabakları ve canlı maç keyfi.',
+        phone: '05445555002',
+        wa: '905555555555',
+        rating: '4.8'
+      },
+      {
+        id: 'm-3',
+        category: 'mekan',
+        title: "Cem's Burger",
+        badge: '🍔 Gurme Burger & Bira',
+        location: '📍 Sinop Merkez',
+        desc: 'El yapımı gurme burgerler, çıtır patates sepetleri, dev ekranda maç ve soğuk fıçı bira.',
+        phone: '05445555003',
+        wa: '905555555555',
+        rating: '4.9'
+      },
+      {
+        id: 'm-4',
+        category: 'mekan',
+        title: 'Porta Marina',
+        badge: '🍽️ Gastropub & Kokteyl',
+        location: '📍 Liman Marina',
+        desc: 'Marina kıyısında seçkin lezzetler, miksoloji kokteylleri ve sahil keyfi.',
+        phone: '05445555004',
+        wa: '905555555555',
+        rating: '4.8'
+      },
+      {
+        id: 'm-5',
+        category: 'mekan',
+        title: 'Joker Pub',
+        badge: '🎸 Canlı Rock',
+        location: '📍 Barlar Sokağı',
+        desc: 'Barlar Sokağı\'nda samimi pub ortamı ve haftalık canlı akustik performanslar.',
+        phone: '05445555005',
+        wa: '905555555555',
+        rating: '4.7'
+      },
+      {
+        id: 'm-6',
+        category: 'mekan',
+        title: 'Kale Burç Cafe Bar',
+        badge: '🏰 Kale Manzarası',
+        location: '📍 Tarihi Sinop Kalesi',
+        desc: 'Tarihi surlarda gündüz kale manzaralı kahve, akşamları canlı müzik ve pub.',
+        phone: '05445555006',
+        wa: '905555555555',
+        rating: '4.8'
+      }
+    ];
+
+    const DATA_KEY = 'sinopcepte_clean_v6_merkez_eczane';
+    const EVENTS_KEY = 'sinopcepte_live_events_v6';
+
+    let appItems = JSON.parse(localStorage.getItem(DATA_KEY)) || defaultData;
+    let appLiveEvents = JSON.parse(localStorage.getItem(EVENTS_KEY)) || defaultLiveEvents;
+
+    let activeEventIndex = 0;
+
+    window.onload = function() {
+      updateThemeUI();
+      applyAdminUI();
+      renderBentoLiveEvents();
+      renderBentoVenues();
+      fetchWeather();
+      setInterval(fetchWeather, 300000);
+      fetchDailyDutyPharmacy();
+    };
+
+    // --- BENTO CANLI ETKİNLİK WIDGET'I ---
+    function renderBentoLiveEvents() {
+      const tabsNav = document.getElementById('eventTabsNav');
+      const display = document.getElementById('activeEventDisplay');
+      const actions = document.getElementById('activeEventActions');
+
+      if (!tabsNav || !display || !actions) return;
+
+      if (appLiveEvents.length === 0) {
+        display.innerHTML = '<p class="text-xs text-slate-400">Aktif etkinlik bulunmuyor.</p>';
+        return;
+      }
+
+      if (activeEventIndex >= appLiveEvents.length) activeEventIndex = 0;
+      const ev = appLiveEvents[activeEventIndex];
+
+      // Tabs
+      tabsNav.innerHTML = appLiveEvents.map((item, idx) => `
+        <button onclick="setActiveEvent(${idx})" class="px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition flex items-center gap-1.5 ${idx === activeEventIndex ? 'bg-pink-600 text-white shadow-md' : 'bg-[#0b0e1d] text-slate-300 hover:bg-slate-800 border border-slate-800'}">
+          <span>${item.badge.includes('MAÇ') ? '⚽' : (item.badge.includes('DJ') ? '🎧' : '🎸')}</span>
+          <span>${item.venue}</span>
+        </button>
+      `).join('');
+
+      // Display Hero
+      display.innerHTML = `
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+          <span class="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded bg-pink-500/20 text-pink-300 border border-pink-500/30">
+            ${ev.badge}
+          </span>
+          <span class="text-xs font-mono font-bold text-amber-300 bg-amber-400/10 px-2.5 py-0.5 rounded border border-amber-400/20">
+            ${ev.date}
+          </span>
+        </div>
+        <h3 class="text-xl sm:text-2xl font-black text-white mt-1">${ev.title}</h3>
+        <p class="text-xs font-semibold text-cyan-300 mt-1">📍 ${ev.venue} • ${ev.location}</p>
+        <p class="text-xs text-slate-300 mt-2.5 leading-relaxed">${ev.desc}</p>
+      `;
+
+      // Actions
+      actions.innerHTML = `
+        <div class="flex items-center gap-2 text-xs text-emerald-400 font-semibold">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Rezervasyon & Giriş Açık</span>
+        </div>
+        <a href="https://wa.me/${ev.wa}?text=${encodeURIComponent(ev.venue + ' mekanındaki ' + ev.title + ' için yer ayırtmak istiyorum')}" target="_blank" class="px-5 py-2.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs shadow-lg transition flex items-center gap-2">
+          <span>Masa / Yer Ayırt</span>
+          <span>⚡</span>
+        </a>
+      `;
+    }
+
+    function setActiveEvent(idx) {
+      activeEventIndex = idx;
+      renderBentoLiveEvents();
+    }
+
+    // --- BENTO MEKANLAR IZGARASI ---
+    function renderBentoVenues(customList) {
+      const grid = document.getElementById('bentoVenuesGrid');
+      if (!grid) return;
+
+      const list = customList || appItems.filter(i => i.category === 'mekan');
+
+      grid.innerHTML = list.map(item => `
+        <div class="p-4 rounded-2xl bg-[#0c1020] border border-slate-800/80 hover:border-slate-700 transition flex flex-col justify-between group">
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-cyan-400">${item.badge}</span>
+              <span class="text-amber-400 text-xs font-bold">★ ${item.rating || '4.8'}</span>
+            </div>
+            <h4 class="font-bold text-base text-white group-hover:text-cyan-400 transition">${item.title}</h4>
+            <p class="text-[11px] text-slate-400 mt-0.5">${item.location}</p>
+            <p class="text-xs text-slate-300 mt-2 line-clamp-2">${item.desc}</p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-800 flex items-center gap-2">
+            <a href="https://wa.me/${item.wa}?text=${encodeURIComponent(item.title + ' hakkında bilgi ve rezervasyon almak istiyorum')}" target="_blank" class="flex-1 py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs text-center transition">
+              Rezervasyon
+            </a>
+            ${item.phone ? `
+              <a href="tel:${item.phone}" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition">
+                📞
+              </a>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // --- GELİŞMİŞ TÜRKÇE NORMALİZASYON & ARAMA ---
+    function normalizeTr(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/İ/g, 'i')
+        .replace(/I/g, 'ı')
+        .toLocaleLowerCase('tr-TR')
+        .replace(/ı/g, 'i')
+        .replace(/ğ/g, 'g')
+        .replace(/ü/g, 'u')
+        .replace(/ş/g, 's')
+        .replace(/ö/g, 'o')
+        .replace(/ç/g, 'c')
+        .replace(/['’`"-]/g, '')
+        .replace(/[^a-z0-9]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function matchSearch(textPool, query) {
+      if (!query) return true;
+      const normalizedPool = normalizeTr(textPool);
+      const queryWords = normalizeTr(query).split(' ').filter(Boolean);
+      return queryWords.every(word => normalizedPool.includes(word));
+    }
+
+    function handleSearch(val) {
+      const raw = (val || '').trim();
+      const clearBtn = document.getElementById('searchClearBtn');
+      const dd = document.getElementById('searchDropdown');
+
+      if (!raw) {
+        clearSearch();
+        return;
+      }
+
+      if (clearBtn) clearBtn.classList.remove('hidden');
+
+      const filteredEvents = appLiveEvents.filter(ev => {
+        const pool = [ev.title, ev.venue, ev.location, ev.desc, ev.badge].join(' ');
+        return matchSearch(pool, raw);
+      });
+
+      const filteredItems = appItems.filter(item => {
+        const pool = [item.title, item.desc, item.location, item.badge, item.category].join(' ');
+        return matchSearch(pool, raw);
+      });
+
+      // Dropdown göster
+      const total = filteredEvents.length + filteredItems.length;
+      if (total === 0) {
+        dd.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">Sonuç bulunamadı.</div>`;
+        dd.classList.remove('hidden');
+        return;
+      }
+
+      let html = '';
+      if (filteredEvents.length > 0) {
+        html += `
+          <div class="p-3">
+            <span class="text-[10px] font-bold text-pink-400 uppercase tracking-wider px-1">Canlı Etkinlikler (${filteredEvents.length})</span>
+            <div class="mt-1 space-y-1">
+              ${filteredEvents.map(e => `
+                <div onclick="selectSearchResult('event', '${e.id}')" class="p-2 rounded-xl hover:bg-slate-800 cursor-pointer flex justify-between items-center transition">
+                  <div>
+                    <p class="text-xs font-bold text-white">${e.title}</p>
+                    <p class="text-[11px] text-slate-400">📍 ${e.venue} • ${e.date}</p>
+                  </div>
+                  <span class="text-[10px] bg-pink-500/20 text-pink-300 px-2 py-0.5 rounded">${e.badge}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      if (filteredItems.length > 0) {
+        html += `
+          <div class="p-3">
+            <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider px-1">İşletmeler (${filteredItems.length})</span>
+            <div class="mt-1 space-y-1">
+              ${filteredItems.slice(0, 4).map(i => `
+                <div onclick="selectSearchResult('item', '${i.id}')" class="p-2 rounded-xl hover:bg-slate-800 cursor-pointer flex justify-between items-center transition">
+                  <div>
+                    <p class="text-xs font-bold text-white">${i.title}</p>
+                    <p class="text-[11px] text-slate-400">${i.location}</p>
+                  </div>
+                  <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded">${i.badge}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      dd.innerHTML = html;
+      dd.classList.remove('hidden');
+    }
+
+    function selectSearchResult(type, id) {
+      const dd = document.getElementById('searchDropdown');
+      if (dd) dd.classList.add('hidden');
+      if (type === 'event') {
+        const idx = appLiveEvents.findIndex(e => e.id === id);
+        if (idx !== -1) setActiveEvent(idx);
+      }
+    }
+
+    function clearSearch() {
+      const inp = document.getElementById('bentoSearchInput');
+      if (inp) inp.value = '';
+      const clearBtn = document.getElementById('searchClearBtn');
+      if (clearBtn) clearBtn.classList.add('hidden');
+      const dd = document.getElementById('searchDropdown');
+      if (dd) dd.classList.add('hidden');
+    }
+
+    // --- GÜNLÜK NÖBETÇİ ECZANE OTOMATİK YÜKLEME ---
+    async function fetchDailyDutyPharmacy() {
+      try {
+        const res = await fetch('pharmacy.json?v=' + Date.now());
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.name) {
+            document.getElementById('bentoPharmacyName').innerText = data.name;
+            if (data.address) document.getElementById('bentoPharmacyAddress').innerText = data.address;
+            if (data.mapUrl) document.getElementById('bentoPharmacyMapBtn').href = data.mapUrl;
+            if (data.phoneFormatted) document.getElementById('bentoPharmacyPhoneBtn').href = 'tel:' + data.phoneFormatted;
+          }
+        }
+      } catch (e) {
+        console.log('Nöbetçi eczane kontrolü:', e);
+      }
+    }
+
+    // --- HAVA DURUMU ---
+    async function fetchWeather() {
+      try {
+        const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=42.0268&longitude=35.1517&current=temperature_2m,weather_code&timezone=Europe%2FIstanbul');
+        const data = await res.json();
+        const temp = data.current.temperature_2m;
+        const code = data.current.weather_code;
+        let icon = '🌤️';
+        if (code === 0) icon = '☀️';
+        else if (code >= 1 && code <= 3) icon = '⛅';
+        else if (code >= 51 && code <= 67) icon = '🌧️';
+        else if (code >= 71) icon = '❄️';
+        document.getElementById('navWeatherIcon').innerText = icon;
+        document.getElementById('navWeatherText').innerText = `Sinop ${temp}°C`;
+        document.getElementById('tileWeatherEmoji').innerText = icon;
+        document.getElementById('tileWeatherTemp').innerText = `${temp}°C`;
+      } catch (e) {
+        console.log('Hava durumu güncellenemedi', e);
+      }
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.contains('dark');
+      if (isDark) {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        localStorage.setItem('sinopcepte_theme', 'light');
+      } else {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+        localStorage.setItem('sinopcepte_theme', 'dark');
+      }
+      updateThemeUI();
+    }
+
+    function updateThemeUI() {
+      const isDark = document.documentElement.classList.contains('dark');
+      const icon = document.getElementById('themeToggleIcon');
+      if (icon) icon.innerText = isDark ? '🌙' : '☀️';
+    }
+
+    // --- GİZLİ YÖNETİCİ GİRİŞİ (3 TIK) ---
+    let clickCount = 0;
+    let clickTimer = null;
+    function handleSecretClick() {
+      clickCount++;
+      clearTimeout(clickTimer);
+      clickTimer = setTimeout(() => { clickCount = 0; }, 1200);
+      if (clickCount >= 3) {
+        clickCount = 0;
+        openAdminModal();
+      }
+    }
+
+    let adminPassword = localStorage.getItem('portal_admin_pass') || '1234';
+    let isAdminLoggedIn = sessionStorage.getItem('sinopcepte_admin_logged') === '1';
+
+    function applyAdminUI() {
+      document.querySelectorAll('.admin-only').forEach(el => {
+        el.classList.toggle('hidden', !isAdminLoggedIn);
+      });
+      const bar = document.getElementById('adminFloatingBar');
+      if (bar) bar.classList.toggle('hidden', !isAdminLoggedIn);
+    }
+
+    function openAdminModal() {
+      if (isAdminLoggedIn) {
+        document.getElementById('adminPanelModal').classList.remove('hidden');
+        renderAdminList();
+      } else {
+        document.getElementById('loginModal').classList.remove('hidden');
+        setTimeout(() => document.getElementById('adminPassInput').focus(), 100);
+      }
+    }
+
+    function closeLoginModal() {
+      document.getElementById('loginModal').classList.add('hidden');
+      document.getElementById('loginError').classList.add('hidden');
+    }
+
+    function verifyAdminLogin() {
+      const p = document.getElementById('adminPassInput').value.trim();
+      if (p === adminPassword) {
+        isAdminLoggedIn = true;
+        sessionStorage.setItem('sinopcepte_admin_logged', '1');
+        closeLoginModal();
+        applyAdminUI();
+        document.getElementById('adminPanelModal').classList.remove('hidden');
+        renderAdminList();
+      } else {
+        document.getElementById('loginError').classList.remove('hidden');
+      }
+    }
+
+    function closeAdminPanel() {
+      document.getElementById('adminPanelModal').classList.add('hidden');
+    }
+
+    function adminLogout() {
+      isAdminLoggedIn = false;
+      sessionStorage.removeItem('sinopcepte_admin_logged');
+      closeAdminPanel();
+      applyAdminUI();
+      alert('Yönetici çıkışı yapıldı.');
+    }
+
+    function renderAdminList() {
+      const listEl = document.getElementById('adminItemList');
+      const eventsHtml = appLiveEvents.map(item => `
+        <div class="flex items-center justify-between p-2 rounded-xl bg-pink-500/10 border border-pink-500/20 text-white">
+          <div>
+            <span class="font-bold">${item.title}</span>
+            <span class="text-pink-400 ml-1">(${item.venue})</span>
+          </div>
+          <button onclick="deleteLiveEvent('${item.id}')" class="text-rose-400 font-bold px-2 py-0.5 hover:bg-rose-500/20 rounded">Sil</button>
+        </div>
+      `).join('');
+
+      const itemsHtml = appItems.map(item => `
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800">
+          <div>
+            <span class="font-bold text-white">${item.title}</span>
+            <span class="text-slate-400 ml-1">(${item.category})</span>
+          </div>
+          <button onclick="deleteAdminItem('${item.id}')" class="text-rose-500 font-bold px-2 py-0.5 hover:bg-rose-500/10 rounded">Sil</button>
+        </div>
+      `).join('');
+
+      listEl.innerHTML = eventsHtml + itemsHtml;
+    }
+
+    function saveAdminItem() {
+      const title = document.getElementById('adminTitle').value.trim();
+      const cat = document.getElementById('adminCategory').value;
+      const badge = document.getElementById('adminBadge').value.trim() || 'Aktif';
+      const location = document.getElementById('adminLocation').value.trim() || 'Sinop';
+      const phone = document.getElementById('adminPhone').value.trim();
+      const wa = document.getElementById('adminWa').value.trim() || '905555555555';
+      const desc = document.getElementById('adminDesc').value.trim() || 'Sinop güncel program.';
+
+      if (!title) {
+        alert('Lütfen başlık veya işletme adını girin.');
+        return;
+      }
+
+      if (cat === 'etkinlik') {
+        const newEv = {
+          id: 'ev-' + Date.now(),
+          title,
+          venue: location,
+          location: 'Sinop',
+          date: badge,
+          badge: '🔥 CANLI ETKİNLİK',
+          desc,
+          wa
+        };
+        appLiveEvents.unshift(newEv);
+        localStorage.setItem(EVENTS_KEY, JSON.stringify(appLiveEvents));
+        renderBentoLiveEvents();
+      } else {
+        const newItem = {
+          id: 'item-' + Date.now(),
+          category: cat,
+          title,
+          badge,
+          location,
+          desc,
+          phone,
+          wa,
+          rating: '4.8'
+        };
+        appItems.unshift(newItem);
+        localStorage.setItem(DATA_KEY, JSON.stringify(appItems));
+        renderBentoVenues();
+      }
+
+      renderAdminList();
+      document.getElementById('adminTitle').value = '';
+      document.getElementById('adminBadge').value = '';
+      document.getElementById('adminDesc').value = '';
+      document.getElementById('adminPhone').value = '';
+      alert('Kayıt başarıyla eklendi ve Bento paneline entegre edildi!');
+    }
+
+    function deleteLiveEvent(id) {
+      if (!confirm('Bu etkinliği silmek istediğinize emin misiniz?')) return;
+      appLiveEvents = appLiveEvents.filter(e => e.id !== id);
+      localStorage.setItem(EVENTS_KEY, JSON.stringify(appLiveEvents));
+      renderBentoLiveEvents();
+      renderAdminList();
+    }
+
+    function deleteAdminItem(id) {
+      if (!confirm('Silmek istediğinize emin misiniz?')) return;
+      appItems = appItems.filter(i => i.id !== id);
+      localStorage.setItem(DATA_KEY, JSON.stringify(appItems));
+      renderBentoVenues();
+      renderAdminList();
+    }
+  </script>
+</body>
+</html>

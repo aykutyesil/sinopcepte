@@ -1,0 +1,1047 @@
+﻿<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SinopCepte | Canlı Radar & Dikey Akış Portalı</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Cabinet+Grotesk:wght@800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          screens: {
+            'xs': '400px',
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['"Cabinet Grotesk"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <script>
+    (function() {
+      const saved = localStorage.getItem('sinopcepte_theme');
+      if (saved === 'light') {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+      } else {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+      }
+    })();
+  </script>
+  <style>
+    html, body {
+      overflow-x: hidden;
+      max-width: 100vw;
+      width: 100%;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    .story-ring {
+      background: linear-gradient(45deg, #f43f5e, #a855f7, #06b6d4);
+      padding: 2px;
+      border-radius: 9999px;
+    }
+    
+    .radar-sweep {
+      position: relative;
+      overflow: hidden;
+    }
+    .radar-sweep::after {
+      content: '';
+      position: absolute;
+      inset: -50%;
+      background: conic-gradient(from 0deg, transparent 0deg, rgba(6, 182, 212, 0.2) 60deg, transparent 65deg);
+      animation: rotateSweep 4s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes rotateSweep {
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="bg-[#090b14] text-slate-100 font-sans antialiased selection:bg-rose-500 selection:text-white min-h-screen overflow-x-hidden w-full max-w-full">
+
+  <div class="max-w-7xl mx-auto flex min-h-screen w-full overflow-x-hidden">
+
+    <!-- 1. SOL SABİT NAVİGASYON KOLONU (DOCK) -->
+    <aside class="w-14 sm:w-20 md:w-60 shrink-0 border-r border-slate-800 bg-[#070910] p-1.5 xs:p-2 sm:p-4 flex flex-col justify-between sticky top-0 h-screen z-30">
+      
+      <div>
+        <!-- Marka / Logo (3 Tık Admin) -->
+        <div class="flex items-center space-x-3 cursor-pointer select-none mb-5 sm:mb-8 px-0.5 sm:px-1" onclick="handleSecretClick()" title="SinopCepte Yönetici Girişi İçin 3 Tık">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-rose-500 via-purple-600 to-cyan-400 flex items-center justify-center font-black text-white text-base sm:text-lg shadow-lg shrink-0">
+            📡
+          </div>
+          <div class="hidden md:block">
+            <span class="text-lg font-black tracking-tight text-white font-display">
+              Sinop<span class="text-rose-500">Radar</span>
+            </span>
+            <span class="block text-[9px] font-mono text-cyan-400 font-bold uppercase">Canlı Şehir Akışı</span>
+          </div>
+        </div>
+
+        <!-- Dikey Menü Butonları -->
+        <nav class="space-y-1.5">
+          <button onclick="filterFeed('all', this)" class="nav-item active w-full p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-rose-600 text-white font-bold text-xs flex items-center justify-center md:justify-start gap-3 transition" title="Canlı Akış (Tümü)">
+            <span class="text-base shrink-0">⚡</span>
+            <span class="hidden md:inline">Canlı Akış (Tümü)</span>
+          </button>
+
+          <button onclick="filterFeed('etkinlik', this)" class="nav-item w-full p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-slate-400 hover:text-white hover:bg-slate-900 font-semibold text-xs flex items-center justify-center md:justify-start gap-3 transition" title="Maç & Canlı Sahne">
+            <span class="text-base shrink-0">⚽</span>
+            <span class="hidden md:inline">Maç & Canlı Sahne</span>
+          </button>
+
+          <button onclick="filterFeed('mekan', this)" class="nav-item w-full p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-slate-400 hover:text-white hover:bg-slate-900 font-semibold text-xs flex items-center justify-center md:justify-start gap-3 transition" title="Mekan & Kafe">
+            <span class="text-base shrink-0">🍸</span>
+            <span class="hidden md:inline">Mekan & Kafe</span>
+          </button>
+
+          <button onclick="filterFeed('taksi', this)" class="nav-item w-full p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-slate-400 hover:text-white hover:bg-slate-900 font-semibold text-xs flex items-center justify-center md:justify-start gap-3 transition" title="7/24 Taksi">
+            <span class="text-base shrink-0">🚖</span>
+            <span class="hidden md:inline">7/24 Taksi</span>
+          </button>
+
+          <button onclick="filterFeed('tekel', this)" class="nav-item w-full p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-slate-400 hover:text-white hover:bg-slate-900 font-semibold text-xs flex items-center justify-center md:justify-start gap-3 transition" title="Gece Açık Tekel">
+            <span class="text-base shrink-0">🏪</span>
+            <span class="hidden md:inline">Gece Açık Tekel</span>
+          </button>
+
+          <button onclick="filterFeed('eczane', this)" class="nav-item w-full p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-slate-400 hover:text-white hover:bg-slate-900 font-semibold text-xs flex items-center justify-center md:justify-start gap-3 transition" title="Nöbetçi Eczane">
+            <span class="text-base shrink-0">💊</span>
+            <span class="hidden md:inline">Nöbetçi Eczane</span>
+          </button>
+
+          <button onclick="filterFeed('cicek', this)" class="nav-item w-full p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-slate-400 hover:text-white hover:bg-slate-900 font-semibold text-xs flex items-center justify-center md:justify-start gap-3 transition" title="Çiçek & Hediye">
+            <span class="text-base shrink-0">💐</span>
+            <span class="hidden md:inline">Çiçek & Hediye</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Alt Araçlar: Tema & Admin -->
+      <div class="pt-3 sm:pt-4 border-t border-slate-800 space-y-2">
+        <button onclick="toggleTheme()" class="w-full p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center md:justify-start gap-2 transition" title="Görünüm Modu">
+          <span id="themeToggleIcon">🌙</span>
+          <span class="hidden md:inline">Görünüm Modu</span>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- 2. ORTA ANA AKIŞ (FOCUSED DISCOVERY STREAM) -->
+    <main class="flex-1 min-w-0 w-full max-w-2xl border-r border-slate-800 p-2.5 xs:p-3 sm:p-6 pb-20 overflow-x-hidden">
+      
+      <!-- Stream Header & Search -->
+      <div class="sticky top-0 z-20 backdrop-blur-xl bg-[#090b14]/90 pb-3 sm:pb-4 mb-3 sm:mb-4 border-b border-slate-800">
+        <div class="flex items-center justify-between gap-1.5 mb-2.5">
+          <div class="min-w-0 flex-1">
+            <h1 class="text-base xs:text-lg sm:text-2xl font-black text-white font-display truncate">Sinop Canlı Akışı</h1>
+            <p class="text-[10px] sm:text-xs text-slate-400 truncate">Şehirde şu an ne var? Canlı akış</p>
+          </div>
+
+          <div class="flex items-center gap-1 shrink-0">
+            <!-- Mobilde Canlı Hava Durumu Rozeti (Her zaman üstte sabit görünür) -->
+            <div 
+              id="mobileWeatherBadge" 
+              class="lg:hidden inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#101426] border border-cyan-500/40 text-cyan-300 font-mono text-[10px] sm:text-xs shadow-sm"
+              title="Sinop Canlı Hava Durumu"
+            >
+              <span id="mobileWeatherIcon" class="text-xs">🌤️</span>
+              <span id="mobileWeatherText" class="font-bold text-white whitespace-nowrap">9.5°C</span>
+            </div>
+
+            <!-- Radar Canlı Rozeti -->
+            <span class="text-[9px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center gap-1 shrink-0">
+              <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+              <span>CANLI</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Arama Girişi -->
+        <div class="bg-[#101426] border border-slate-800 rounded-xl sm:rounded-2xl px-3 py-1.5 sm:py-2 flex items-center gap-2 focus-within:border-cyan-500 shadow-inner">
+          <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          <input 
+            type="text" 
+            id="feedSearchInput" 
+            oninput="handleSearch(this.value)" 
+            placeholder="Akışta ara (Galatasaray, DJ Burkay, Taksi, Tekel, Eczane)..." 
+            class="w-full bg-transparent text-xs text-white placeholder-slate-400 focus:outline-none"
+          >
+          <button id="searchClearBtn" onclick="clearSearch()" class="hidden text-slate-400 hover:text-white text-xs">✕</button>
+        </div>
+
+        <!-- Mobilde Hızlı Canlı Radar Şeridi (Hava Durumu + Nöbetçi Eczane Kartı) -->
+        <div class="lg:hidden mt-2.5 grid grid-cols-2 gap-1.5 sm:gap-2">
+          <!-- 1. Mobil Canlı Hava Durumu Kartı -->
+          <div class="radar-sweep rounded-xl sm:rounded-2xl p-2 sm:p-2.5 bg-[#0f1428] border border-cyan-500/30 relative overflow-hidden min-w-0">
+            <div class="relative z-10 flex items-center justify-between gap-1">
+              <div class="min-w-0">
+                <span class="block text-[8px] sm:text-[9px] font-mono font-bold text-cyan-400 uppercase leading-none truncate">Hava & Deniz</span>
+                <span id="mobRadarWeatherText" class="text-xs sm:text-sm font-black text-white font-mono mt-0.5 block truncate">Sinop 9.5°C</span>
+              </div>
+              <span id="mobRadarWeatherIcon" class="text-sm sm:text-base shrink-0">🌤️</span>
+            </div>
+          </div>
+
+          <!-- 2. Mobil Nöbetçi Eczane Kartı -->
+          <a 
+            id="mobRadarPharmacyMapBtn"
+            href="https://www.google.com/maps?daddr=42.0257925,35.1457768" 
+            target="_blank"
+            class="rounded-xl sm:rounded-2xl p-2 sm:p-2.5 bg-gradient-to-br from-rose-950/70 to-[#12162a] border border-rose-500/40 relative flex items-center justify-between gap-1 group cursor-pointer hover:border-rose-400 transition min-w-0"
+            title="Sinop Merkez Günün Nöbetçi Eczanesi - Haritada Gör"
+          >
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1 leading-none">
+                <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping shrink-0"></span>
+                <span class="text-[8px] sm:text-[9px] font-mono font-bold text-rose-400 uppercase truncate">Nöbetçi</span>
+              </div>
+              <span id="mobRadarPharmacyName" class="text-[11px] sm:text-xs font-extrabold text-white truncate block mt-0.5">Elif Eczanesi</span>
+            </div>
+            <span class="text-[8px] sm:text-[9px] bg-rose-500 text-white font-bold px-1.5 py-0.5 rounded shrink-0">🗺️</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Feed Kartları Akışı -->
+      <div id="feedStreamContainer" class="space-y-5"></div>
+
+    </main>
+
+    <!-- 3. SAĞ SABİT ACİL RADAR & BİLGİ PANELİ (DESKTOP) -->
+    <aside class="hidden lg:block w-80 shrink-0 p-6 space-y-6 sticky top-0 h-screen overflow-y-auto no-scrollbar">
+      
+      <!-- Radar Sweep Canlı Durum Kartı -->
+      <div class="radar-sweep rounded-3xl p-5 bg-[#0f1428] border border-cyan-500/30 shadow-xl relative">
+        <div class="relative z-10">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-[10px] font-mono font-bold text-cyan-400 uppercase">Sinop Hava & Deniz</span>
+            <span class="text-xl" id="radarWeatherIcon">🌤️</span>
+          </div>
+          <span class="text-3xl font-black text-white font-mono" id="radarWeatherText">Sinop 9.5°C</span>
+          <p class="text-xs text-slate-400 mt-1">Hükümet Meydanı & Liman Canlı</p>
+        </div>
+      </div>
+
+      <!-- Nöbetçi Eczane Radar Kartı (Google Maps Navigasyonlu) -->
+      <div class="rounded-3xl p-5 bg-gradient-to-br from-rose-950/70 to-[#12162a] border border-rose-500/40 shadow-xl">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+            <span class="text-[10px] font-mono font-bold text-rose-400 uppercase">Günün Nöbetçi Eczanesi</span>
+          </div>
+          <span class="text-[9px] font-mono bg-rose-500 text-white font-bold px-1.5 py-0.2 rounded">AÇIK</span>
+        </div>
+
+        <h3 id="radarPharmacyName" class="text-base font-black text-white">Elif Eczanesi</h3>
+        <p id="radarPharmacyAddr" class="text-xs text-slate-300 mt-1">Kaleyazısı Mahallesi, Sakarya Caddesi, No:77/B Merkez / Sinop</p>
+
+        <div class="mt-4 flex gap-2">
+          <a 
+            id="radarPharmacyMapBtn" 
+            href="https://www.google.com/maps?daddr=42.0257925,35.1457768" 
+            target="_blank" 
+            class="flex-1 py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs text-center transition flex items-center justify-center gap-1.5"
+          >
+            <span>📍 Haritada Yol Tarifi</span>
+          </a>
+          <a 
+            id="radarPharmacyPhoneBtn" 
+            href="tel:03682715656" 
+            class="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition"
+          >
+            📞
+          </a>
+        </div>
+      </div>
+
+      <!-- 7/24 Taksi Hızlı Arama -->
+      <div class="rounded-3xl p-5 bg-[#0f1428] border border-slate-800 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="font-bold text-xs text-white">🚖 7/24 Taksi Durakları</h4>
+          <span class="text-[10px] font-mono text-amber-400 font-bold">HAZIR</span>
+        </div>
+        <div class="space-y-1.5 text-xs">
+          <a href="tel:03682611010" class="p-2 rounded-xl bg-[#080b18] hover:bg-amber-400 hover:text-slate-950 text-slate-300 transition flex justify-between items-center">
+            <span class="font-bold">Meydan Taksi</span>
+            <span class="font-mono font-bold text-amber-400">0368 261 10 10</span>
+          </a>
+          <a href="tel:03682612020" class="p-2 rounded-xl bg-[#080b18] hover:bg-amber-400 hover:text-slate-950 text-slate-300 transition flex justify-between items-center">
+            <span class="font-bold">İskele Taksi</span>
+            <span class="font-mono font-bold text-amber-400">0368 261 20 20</span>
+          </a>
+          <a href="tel:03682613030" class="p-2 rounded-xl bg-[#080b18] hover:bg-amber-400 hover:text-slate-950 text-slate-300 transition flex justify-between items-center">
+            <span class="font-bold">Otogar Taksi</span>
+            <span class="font-mono font-bold text-amber-400">0368 261 30 30</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Gece Açık Tekeller -->
+      <div class="rounded-3xl p-5 bg-[#0f1428] border border-slate-800 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="font-bold text-xs text-white">🏪 Gece Açık Kurye</h4>
+          <span class="text-[10px] font-mono text-emerald-400 font-bold">SERVİS</span>
+        </div>
+        <div class="space-y-1.5 text-xs">
+          <a href="https://wa.me/905445551001?text=Sipariş%20vermek%20istiyorum" target="_blank" class="p-2 rounded-xl bg-[#080b18] hover:bg-emerald-600 hover:text-white text-slate-300 transition flex justify-between items-center">
+            <span class="font-bold">Deniz Tekel</span>
+            <span class="text-emerald-400 font-mono font-bold">Sipariş Ver →</span>
+          </a>
+          <a href="https://wa.me/905445551002?text=Sipariş%20vermek%20istiyorum" target="_blank" class="p-2 rounded-xl bg-[#080b18] hover:bg-emerald-600 hover:text-white text-slate-300 transition flex justify-between items-center">
+            <span class="font-bold">Karakum Tekel</span>
+            <span class="text-emerald-400 font-mono font-bold">Sipariş Ver →</span>
+          </a>
+        </div>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <!-- ADMIN FLOATING BAR -->
+  <div id="adminFloatingBar" class="hidden fixed bottom-5 right-5 z-50 flex items-center gap-2 bg-[#0c1020] border border-rose-500 text-white shadow-2xl rounded-2xl px-4 py-2">
+    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+    <span class="text-xs font-mono font-bold">Admin Radar Modu</span>
+    <button onclick="openAdminModal()" class="text-xs font-bold px-2.5 py-1 bg-rose-600 text-white rounded-lg ml-1">Panel</button>
+    <button onclick="adminLogout()" class="text-xs text-slate-400 hover:text-rose-400 ml-1">Çıkış</button>
+  </div>
+
+  <!-- ŞİFRELİ GİRİŞ MODALI -->
+  <div id="loginModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-[#0f1428] border border-slate-800 rounded-3xl max-w-sm w-full p-6 space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base text-white">Yönetici Girişi</h3>
+        <button onclick="closeLoginModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+      <input type="password" id="adminPassInput" placeholder="Şifrenizi yazın" onkeydown="if(event.key==='Enter') verifyAdminLogin()" class="w-full bg-[#070914] border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500">
+      <p id="loginError" class="text-xs text-rose-500 hidden">Hatalı şifre!</p>
+      <button onclick="verifyAdminLogin()" class="w-full py-2.5 rounded-xl bg-rose-600 text-white font-bold text-sm">Giriş Yap</button>
+    </div>
+  </div>
+
+  <!-- YÖNETİM PANELİ MODALI -->
+  <div id="adminPanelModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-[#0f1428] border border-slate-800 rounded-3xl max-w-2xl w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+        <h3 class="font-bold text-lg text-white">Sinop Radar Yönetim Paneli</h3>
+        <button onclick="closeAdminPanel()" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+
+      <div class="space-y-4 text-xs font-mono">
+        <h4 class="font-bold text-rose-400">+ Yeni Kayıt Ekle (Etkinlik veya İşletme)</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Başlık / Etkinlik Adı</label>
+            <input type="text" id="adminTitle" placeholder="Örn: Galatasaray - Amed Maçı veya DJ Burkay" class="w-full bg-[#080b18] border border-slate-800 rounded-xl p-2.5 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Kategori / Alan</label>
+            <select id="adminCategory" class="w-full bg-[#080b18] border border-slate-800 rounded-xl p-2.5 text-white">
+              <option value="etkinlik">🔥 Canlı Sahne & Maç Yayını</option>
+              <option value="mekan">🍸 Mekan & Kafe</option>
+              <option value="tekel">🏪 Tekel & Gece Açık</option>
+              <option value="taksi">🚖 Taksi Durağı</option>
+              <option value="eczane">💊 Nöbetçi Eczane</option>
+              <option value="cicek">💐 Çiçek & Hediye</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Rozet / Zaman</label>
+            <input type="text" id="adminBadge" placeholder="Örn: ⚽ CANLI MAÇ veya Bugün • 20:00" class="w-full bg-[#080b18] border border-slate-800 rounded-xl p-2.5 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Mekan / Konum</label>
+            <input type="text" id="adminLocation" placeholder="Örn: Nihavent Pub • İskele" class="w-full bg-[#080b18] border border-slate-800 rounded-xl p-2.5 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Telefon</label>
+            <input type="text" id="adminPhone" placeholder="Örn: 05441234567" class="w-full bg-[#080b18] border border-slate-800 rounded-xl p-2.5 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">WhatsApp No</label>
+            <input type="text" id="adminWa" placeholder="Örn: 905441234567" class="w-full bg-[#080b18] border border-slate-800 rounded-xl p-2.5 text-white">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-slate-400 mb-1">Açıklama</label>
+            <input type="text" id="adminDesc" placeholder="Akış açıklaması..." class="w-full bg-[#080b18] border border-slate-800 rounded-xl p-2.5 text-white">
+          </div>
+        </div>
+        <button onclick="saveAdminItem()" class="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold transition">Kaydet ve Akışta Yayınla</button>
+      </div>
+
+      <div class="pt-4 border-t border-slate-800 font-mono">
+        <h4 class="font-bold text-slate-400 text-xs mb-2">Kayıtlı Canlı Etkinlikler & Mekanlar</h4>
+        <div id="adminItemList" class="space-y-1.5 max-h-52 overflow-y-auto text-xs"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const defaultLiveEvents = [
+      {
+        id: 'ev-1',
+        title: 'Galatasaray - Amed SK Canlı Maç Yayını',
+        venue: 'Nihavent Restaurant Pub',
+        location: 'İskele Caddesi',
+        date: 'Bugün Canlı • 20:00',
+        badge: '⚽ CANLI MAÇ YAYINI',
+        desc: 'Dev projeksiyon ve yüksek ses sistemiyle maç coşkusu! Zengin fıçı bira çeşitleri ve sıcak pub lezzetleri. Maç için önceden masa rezervasyonu önerilir.',
+        wa: '905555555555'
+      },
+      {
+        id: 'ev-2',
+        title: 'Burkay Bahadır ile DJ Performans',
+        venue: "Mathiday's Social",
+        location: 'Liman Sahil',
+        date: 'Bu Gece • 22:30',
+        badge: '🎧 BURKAY BAHADIR DJ',
+        desc: 'Burkay Bahadır kabinde! Liman manzarası eşliğinde ritmik deep house/nu-disco setleri, şık lounge atmosferi ve imza miksoloji kokteylleri.',
+        wa: '905555555555'
+      },
+      {
+        id: 'ev-3',
+        title: 'Akustik Canlı Rock Gecesi',
+        venue: 'Joker Pub',
+        location: 'Barlar Sokağı',
+        date: 'Bu Akşam • 21:30',
+        badge: '🎸 CANLI ROCK SAHNESİ',
+        desc: 'Sinop Barlar Sokağı\'nda sevilen 90\'lar Türkçe rock ve akustik parçalarla canlı performans gecesi. Giriş ücretsizdir.',
+        wa: '905555555555'
+      },
+      {
+        id: 'ev-4',
+        title: 'Tarihi Kalede Akustik Ezgiler & Türkü',
+        venue: 'Kale Burç Cafe Bar',
+        location: 'Tarihi Sinop Kalesi',
+        date: 'Bu Akşam • 20:30',
+        badge: '🏰 KALEDE CANLI MÜZİK',
+        desc: 'Sinop Kalesi surlarında eşsiz deniz manzarası eşliğinde bağlama ve akustik gitar dinletisi. Sıcak kahve ve pub içecekleri.',
+        wa: '905555555555'
+      }
+    ];
+
+    const defaultData = [
+      {
+        id: 'm-1',
+        category: 'mekan',
+        title: "Mathiday's Social",
+        badge: '🍸 Kokteyl & DJ',
+        location: '📍 Liman Mevkii',
+        desc: 'Burkay Bahadır DJ performansları, liman manzaralı imza kokteyller ve sahil lounge atmosferi.',
+        phone: '05445555001',
+        wa: '905555555555',
+        rating: '4.9'
+      },
+      {
+        id: 'm-2',
+        category: 'mekan',
+        title: 'Nihavent Restaurant Pub',
+        badge: '⚽ Dev Maç Yayını & 🍺 Pub',
+        location: '📍 İskele Caddesi',
+        desc: 'Galatasaray - Amed SK maçı dev ekranda! Zengin fıçı biralar, sıcak pub tabakları ve canlı maç keyfi.',
+        phone: '05445555002',
+        wa: '905555555555',
+        rating: '4.8'
+      },
+      {
+        id: 'm-3',
+        category: 'mekan',
+        title: "Cem's Burger",
+        badge: '🍔 Gurme Burger & Bira',
+        location: '📍 Sinop Merkez',
+        desc: 'El yapımı gurme burgerler, çıtır patates sepetleri, dev ekranda maç ve soğuk fıçı bira.',
+        phone: '05445555003',
+        wa: '905555555555',
+        rating: '4.9'
+      },
+      {
+        id: 'm-4',
+        category: 'mekan',
+        title: 'Porta Marina',
+        badge: '🍽️ Gastropub & Kokteyl',
+        location: '📍 Liman Marina',
+        desc: 'Marina kıyısında seçkin lezzetler, miksoloji kokteylleri ve sahil keyfi.',
+        phone: '05445555004',
+        wa: '905555555555',
+        rating: '4.8'
+      },
+      {
+        id: 'm-5',
+        category: 'mekan',
+        title: 'Joker Pub',
+        badge: '🎸 Canlı Müzik & Pub',
+        location: '📍 Barlar Sokağı',
+        desc: 'Barlar Sokağı\'nda samimi pub ortamı ve haftalık canlı akustik performanslar.',
+        phone: '05445555005',
+        wa: '905555555555',
+        rating: '4.7'
+      },
+      {
+        id: 'm-6',
+        category: 'mekan',
+        title: 'Kale Burç Cafe Bar',
+        badge: '🏰 Kale Manzaralı Kafe & Pub',
+        location: '📍 Tarihi Sinop Kalesi',
+        desc: 'Tarihi surlarda gündüz kale manzaralı kahve, akşamları canlı müzik ve pub.',
+        phone: '05445555006',
+        wa: '905555555555',
+        rating: '4.8'
+      },
+      {
+        id: 't-1',
+        category: 'tekel',
+        title: 'Deniz Tekel & Şarküteri',
+        badge: '🟢 Gece 03:00\'e Kadar Açık',
+        location: '📍 İskele Caddesi',
+        desc: 'Soğuk meze, kuruyemiş, yerli/ithal içecekler ve gece hızlı motorlu eve teslimat.',
+        phone: '05445551001',
+        wa: '905445551001',
+        rating: '4.9'
+      },
+      {
+        id: 't-2',
+        category: 'tekel',
+        title: 'Karakum Sahil Tekel & Market',
+        badge: '🟢 7/24 Açık Market',
+        location: '📍 Karakum Yolu',
+        desc: 'Karakum sahil şeridine ve konaklama yerlerine kesintisiz gece paket servis.',
+        phone: '05445551002',
+        wa: '905445551002',
+        rating: '4.8'
+      },
+      {
+        id: 't-3',
+        category: 'tekel',
+        title: 'Meydan Tekel & Büfe',
+        badge: '🟢 Gece Açık Büfe',
+        location: '📍 Hükümet Meydanı',
+        desc: 'Merkezde soğuk içecekler, atıştırmalıklar ve hızlı kurye servisi.',
+        phone: '05445551003',
+        wa: '905445551003',
+        rating: '4.7'
+      },
+      {
+        id: 'tx-1',
+        category: 'taksi',
+        title: 'Sinop Meydan Taksi Durağı',
+        badge: '🚖 7/24 Nöbetçi Taksi',
+        location: '📍 Hükümet Konağı Meydanı',
+        desc: 'Şehir içi ve dışı güvenilir ulaşım, Sinop Havalimanı ve Otogar transferleri.',
+        phone: '03682611010',
+        wa: '905445553001',
+        rating: '4.9'
+      },
+      {
+        id: 'tx-2',
+        category: 'taksi',
+        title: 'İskele Sahil Taksi',
+        badge: '🚖 7/24 Anında Kapıda',
+        location: '📍 İskele Meydanı',
+        desc: 'İskele, Aşıklar Caddesi, Karakum ve Üniversite kampüslerine hızlı ulaşım.',
+        phone: '03682612020',
+        wa: '905445553002',
+        rating: '4.8'
+      },
+      {
+        id: 'tx-3',
+        category: 'taksi',
+        title: 'Otogar Birlik Taksi',
+        badge: '🚖 Otogar Çıkışı 7/24',
+        location: '📍 Sinop Otobüs Terminali',
+        desc: 'Gece otobüsle gelen yolcular için terminalde 7/24 hazır taksiler.',
+        phone: '03682613030',
+        wa: '905445553003',
+        rating: '4.7'
+      },
+      {
+        id: 'e-1',
+        category: 'eczane',
+        title: 'Elif Eczanesi (Sinop Merkez Nöbetçi)',
+        badge: '💊 Bugün Nöbetçi • Sabaha Kadar Açık',
+        location: '📍 Kaleyazısı Mahallesi, Sakarya Caddesi, No:77/B Merkez / Sinop',
+        desc: 'Bugün Sinop Merkez nöbetçi eczanesidir. Acil reçeteler ve ilaç temini için sabaha kadar açıktır. Haritada konum ve yol tarifi alabilirsiniz.',
+        phone: '03682617236',
+        mapUrl: 'https://www.google.com/maps?daddr=42.0257925,35.1457768',
+        wa: '903682617236',
+        rating: '5.0'
+      },
+      {
+        id: 'c-1',
+        category: 'cicek',
+        title: 'Sinop Gül Çiçekçilik',
+        badge: '💐 WhatsApp Canlı Fotoğraflı Sipariş',
+        location: '📍 Sakarya Caddesi',
+        desc: 'Taze kesme güller, doğum günü buketleri ve Sinop içi aynı gün adrese teslimat.',
+        phone: '05445552001',
+        wa: '905445552001',
+        rating: '5.0'
+      },
+      {
+        id: 'c-2',
+        category: 'cicek',
+        title: 'Ada Çiçek & Botanik',
+        badge: '🌸 Saksı Çiçekleri & Teraryum',
+        location: '📍 Tersane Mevkii',
+        desc: 'Orkide, sukulent, özel tasarım kutu çiçekler ve hediyelik aranjmanlar.',
+        phone: '05445552002',
+        wa: '905445552002',
+        rating: '4.9'
+      }
+    ];
+
+    const DATA_KEY = 'sinopcepte_clean_v6_merkez_eczane';
+    const EVENTS_KEY = 'sinopcepte_live_events_v6';
+
+    let appItems = JSON.parse(localStorage.getItem(DATA_KEY)) || defaultData;
+    let appLiveEvents = JSON.parse(localStorage.getItem(EVENTS_KEY)) || defaultLiveEvents;
+
+    let currentFilter = 'all';
+
+    window.onload = function() {
+      updateThemeUI();
+      applyAdminUI();
+      renderFeedStream();
+      fetchWeather();
+      setInterval(fetchWeather, 300000);
+      fetchDailyDutyPharmacy();
+    };
+
+    // --- STREAM AKIŞI ÇİZME ---
+    function renderFeedStream(customEvents, customItems) {
+      const container = document.getElementById('feedStreamContainer');
+      if (!container) return;
+
+      const events = customEvents !== undefined ? customEvents : (currentFilter === 'all' || currentFilter === 'etkinlik' ? appLiveEvents : []);
+      const items = customItems !== undefined ? customItems : (currentFilter === 'all' ? appItems : appItems.filter(i => i.category === currentFilter));
+
+      let html = '';
+
+      // 1. Canlı Etkinlik Kartları (Full-Bleed Reels Vibe)
+      if (events.length > 0) {
+        html += events.map(ev => `
+          <div class="rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 bg-gradient-to-br from-[#18132e] via-[#101426] to-[#090c18] border border-rose-500/30 shadow-2xl relative overflow-hidden group min-w-0">
+            <div class="absolute -right-12 -top-12 w-44 h-44 bg-rose-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div class="relative z-10 min-w-0">
+              <div class="flex items-center justify-between gap-1.5 mb-2.5 sm:mb-3">
+                <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                  <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-rose-500 animate-pulse shrink-0"></span>
+                  <span class="text-[9px] sm:text-[10px] font-mono font-black px-2 py-0.5 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30 truncate">
+                    ${ev.badge}
+                  </span>
+                </div>
+                <span class="text-[10px] sm:text-xs font-mono font-bold text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded-lg border border-amber-400/20 shrink-0">
+                  ${ev.date}
+                </span>
+              </div>
+
+              <h3 class="text-base sm:text-2xl font-black text-white group-hover:text-rose-400 transition font-display break-words">
+                ${ev.title}
+              </h3>
+
+              <div class="flex items-center gap-1 text-[11px] sm:text-xs font-bold text-cyan-400 mt-1.5 truncate">
+                <span class="truncate">📍 ${ev.venue}</span>
+                <span class="text-slate-400 truncate">• ${ev.location}</span>
+              </div>
+
+              <p class="text-xs text-slate-300 mt-2.5 sm:mt-3 leading-relaxed break-words">${ev.desc}</p>
+
+              <div class="mt-4 pt-3 sm:mt-5 sm:pt-4 border-t border-white/10 flex flex-col xs:flex-row xs:items-center justify-between gap-2.5">
+                <span class="text-[10px] sm:text-[11px] font-mono text-emerald-400 truncate">● Canlı Yayın & Rezervasyon</span>
+                <a href="https://wa.me/${ev.wa}?text=${encodeURIComponent(ev.venue + ' mekanındaki ' + ev.title + ' için yer ayırtmak istiyorum')}" target="_blank" class="w-full xs:w-auto px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-rose-500 to-purple-600 hover:from-rose-600 hover:to-purple-700 text-white font-bold text-xs shadow-lg transition flex items-center justify-center gap-1.5 shrink-0">
+                  <span>Masa Ayırt</span>
+                  <span>⚡</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // 2. İşletme Kartları
+      if (items.length > 0) {
+        html += items.map(item => {
+          const isEczane = item.category === 'eczane';
+          const isPhonePrimary = item.category === 'taksi';
+
+          let primaryBtnText = 'WhatsApp İletişim';
+          let primaryBtnLink = `https://wa.me/${item.wa}?text=${encodeURIComponent(item.title + ' hakkında bilgi almak istiyorum')}`;
+
+          if (isEczane) {
+            primaryBtnText = '📍 Haritada Yol Tarifi Al';
+            primaryBtnLink = item.mapUrl || 'https://www.google.com/maps?daddr=42.0032747,35.0787668';
+          } else if (item.category === 'taksi') {
+            primaryBtnText = '🚖 Durağı Ara';
+            primaryBtnLink = `tel:${item.phone}`;
+          } else if (item.category === 'tekel') {
+            primaryBtnText = '🛵 Gece Sipariş Ver';
+          } else if (item.category === 'cicek') {
+            primaryBtnText = '💐 Çiçek Siparişi';
+          }
+
+          return `
+            <div class="rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 bg-[#0e1224] border ${isEczane ? 'border-rose-500/50 shadow-[0_0_20px_rgba(244,63,94,0.2)]' : 'border-slate-800 hover:border-slate-700'} transition flex flex-col justify-between group min-w-0">
+              <div class="min-w-0">
+                <div class="flex items-center justify-between gap-1.5 mb-2">
+                  <span class="text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-0.5 rounded-full ${isEczane ? 'bg-rose-500/20 text-rose-300' : 'bg-slate-800 text-cyan-400'} truncate">
+                    ${item.badge}
+                  </span>
+                  <span class="text-amber-400 text-[11px] sm:text-xs font-bold shrink-0">★ ${item.rating || '4.8'}</span>
+                </div>
+
+                <h4 class="text-base sm:text-lg font-black text-white group-hover:text-cyan-400 transition truncate">${item.title}</h4>
+                <p class="text-[11px] sm:text-xs text-slate-400 mt-0.5 truncate">${item.location}</p>
+                <p class="text-xs text-slate-300 mt-2 leading-relaxed break-words">${item.desc}</p>
+              </div>
+
+              <div class="mt-3.5 pt-3 border-t border-slate-800/80 flex items-center gap-1.5 sm:gap-2 min-w-0">
+                <a href="${primaryBtnLink}" target="${isEczane ? '_blank' : (isPhonePrimary ? '_self' : '_blank')}" class="flex-1 min-w-0 py-2 sm:py-2.5 px-3 rounded-xl ${isEczane ? 'bg-rose-600 hover:bg-rose-500' : 'bg-slate-800 hover:bg-cyan-600 hover:text-white'} text-slate-200 font-bold text-xs text-center transition truncate">
+                  ${primaryBtnText}
+                </a>
+                ${item.phone ? `
+                  <a href="tel:${item.phone}" class="p-2 sm:p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition shrink-0">
+                    📞
+                  </a>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      if (events.length === 0 && items.length === 0) {
+        html = `<div class="p-12 text-center text-slate-500 text-xs">Aradığınız kriterde bir akış bulunamadı.</div>`;
+      }
+
+      container.innerHTML = html;
+    }
+
+    // --- FİLTRE DEĞİŞTİRME ---
+    function filterFeed(cat, btn) {
+      currentFilter = cat;
+      document.querySelectorAll('.nav-item').forEach(b => {
+        b.className = "nav-item w-full p-2.5 rounded-2xl text-slate-400 hover:text-white hover:bg-slate-900 font-semibold text-xs flex items-center gap-3 transition";
+      });
+      if (btn) {
+        btn.className = "nav-item active w-full p-2.5 rounded-2xl bg-rose-600 text-white font-bold text-xs flex items-center gap-3 transition";
+      }
+      renderFeedStream();
+    }
+
+    // --- GELİŞMİŞ TÜRKÇE NORMALİZASYON & ARAMA ---
+    function normalizeTr(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/İ/g, 'i')
+        .replace(/I/g, 'ı')
+        .toLocaleLowerCase('tr-TR')
+        .replace(/ı/g, 'i')
+        .replace(/ğ/g, 'g')
+        .replace(/ü/g, 'u')
+        .replace(/ş/g, 's')
+        .replace(/ö/g, 'o')
+        .replace(/ç/g, 'c')
+        .replace(/['’`"-]/g, '')
+        .replace(/[^a-z0-9]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function matchSearch(textPool, query) {
+      if (!query) return true;
+      const normalizedPool = normalizeTr(textPool);
+      const queryWords = normalizeTr(query).split(' ').filter(Boolean);
+      return queryWords.every(word => normalizedPool.includes(word));
+    }
+
+    function handleSearch(val) {
+      const raw = (val || '').trim();
+      const clearBtn = document.getElementById('searchClearBtn');
+
+      if (!raw) {
+        clearSearch();
+        return;
+      }
+
+      if (clearBtn) clearBtn.classList.remove('hidden');
+
+      const filteredEvents = appLiveEvents.filter(ev => {
+        const pool = [ev.title, ev.venue, ev.location, ev.desc, ev.badge].join(' ');
+        return matchSearch(pool, raw);
+      });
+
+      const filteredItems = appItems.filter(item => {
+        const pool = [item.title, item.desc, item.location, item.badge, item.category].join(' ');
+        return matchSearch(pool, raw);
+      });
+
+      renderFeedStream(filteredEvents, filteredItems);
+    }
+
+    function clearSearch() {
+      const inp = document.getElementById('feedSearchInput');
+      if (inp) inp.value = '';
+      const clearBtn = document.getElementById('searchClearBtn');
+      if (clearBtn) clearBtn.classList.add('hidden');
+      renderFeedStream();
+    }
+
+    // --- GÜNLÜK NÖBETÇİ ECZANE OTOMATİK YÜKLEME ---
+    async function fetchDailyDutyPharmacy() {
+      try {
+        const res = await fetch('pharmacy.json?v=' + Date.now());
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.name) {
+            // Masaüstü
+            const rName = document.getElementById('radarPharmacyName');
+            if (rName) rName.innerText = data.name;
+            const rAddr = document.getElementById('radarPharmacyAddr');
+            if (rAddr && data.address) rAddr.innerText = data.address;
+            const rMap = document.getElementById('radarPharmacyMapBtn');
+            if (rMap && data.mapUrl) rMap.href = data.mapUrl;
+            const rPhone = document.getElementById('radarPharmacyPhoneBtn');
+            if (rPhone && data.phoneFormatted) rPhone.href = 'tel:' + data.phoneFormatted;
+
+            // Mobilde Canlı Radar Kartı
+            const mobName = document.getElementById('mobRadarPharmacyName');
+            if (mobName) mobName.innerText = data.name;
+            const mobMap = document.getElementById('mobRadarPharmacyMapBtn');
+            if (mobMap && data.mapUrl) mobMap.href = data.mapUrl;
+          }
+        }
+      } catch (e) {
+        console.log('Nöbetçi eczane kontrolü:', e);
+      }
+    }
+
+    // --- HAVA DURUMU ---
+    async function fetchWeather() {
+      try {
+        const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=42.0268&longitude=35.1517&current=temperature_2m,weather_code&timezone=Europe%2FIstanbul');
+        const data = await res.json();
+        const temp = data.current.temperature_2m;
+        const code = data.current.weather_code;
+        let icon = '🌤️';
+        if (code === 0) icon = '☀️';
+        else if (code >= 1 && code <= 3) icon = '⛅';
+        else if (code >= 51 && code <= 67) icon = '🌧️';
+        else if (code >= 71) icon = '❄️';
+        
+        // Masaüstü Sağ Sidebar
+        const radarWeatherIcon = document.getElementById('radarWeatherIcon');
+        const radarWeatherText = document.getElementById('radarWeatherText');
+        if (radarWeatherIcon) radarWeatherIcon.innerText = icon;
+        if (radarWeatherText) radarWeatherText.innerText = `Sinop ${temp}°C`;
+
+        // Mobil Sticky Header Rozeti
+        const mobIcon = document.getElementById('mobileWeatherIcon');
+        const mobText = document.getElementById('mobileWeatherText');
+        if (mobIcon) mobIcon.innerText = icon;
+        if (mobText) mobText.innerText = `${temp}°C`;
+
+        // Mobilde Canlı Radar Kartı
+        const mobRadarIcon = document.getElementById('mobRadarWeatherIcon');
+        const mobRadarText = document.getElementById('mobRadarWeatherText');
+        if (mobRadarIcon) mobRadarIcon.innerText = icon;
+        if (mobRadarText) mobRadarText.innerText = `Sinop ${temp}°C`;
+      } catch (e) {
+        console.log('Hava durumu güncellenemedi', e);
+      }
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.contains('dark');
+      if (isDark) {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        localStorage.setItem('sinopcepte_theme', 'light');
+      } else {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+        localStorage.setItem('sinopcepte_theme', 'dark');
+      }
+      updateThemeUI();
+    }
+
+    function updateThemeUI() {
+      const isDark = document.documentElement.classList.contains('dark');
+      const icon = document.getElementById('themeToggleIcon');
+      if (icon) icon.innerText = isDark ? '🌙' : '☀️';
+    }
+
+    // --- GİZLİ YÖNETİCİ GİRİŞİ (3 TIK) ---
+    let clickCount = 0;
+    let clickTimer = null;
+    function handleSecretClick() {
+      clickCount++;
+      clearTimeout(clickTimer);
+      clickTimer = setTimeout(() => { clickCount = 0; }, 1200);
+      if (clickCount >= 3) {
+        clickCount = 0;
+        openAdminModal();
+      }
+    }
+
+    let adminPassword = localStorage.getItem('portal_admin_pass') || '1234';
+    let isAdminLoggedIn = sessionStorage.getItem('sinopcepte_admin_logged') === '1';
+
+    function applyAdminUI() {
+      document.querySelectorAll('.admin-only').forEach(el => {
+        el.classList.toggle('hidden', !isAdminLoggedIn);
+      });
+      const bar = document.getElementById('adminFloatingBar');
+      if (bar) bar.classList.toggle('hidden', !isAdminLoggedIn);
+    }
+
+    function openAdminModal() {
+      if (isAdminLoggedIn) {
+        document.getElementById('adminPanelModal').classList.remove('hidden');
+        renderAdminList();
+      } else {
+        document.getElementById('loginModal').classList.remove('hidden');
+        setTimeout(() => document.getElementById('adminPassInput').focus(), 100);
+      }
+    }
+
+    function closeLoginModal() {
+      document.getElementById('loginModal').classList.add('hidden');
+      document.getElementById('loginError').classList.add('hidden');
+    }
+
+    function verifyAdminLogin() {
+      const p = document.getElementById('adminPassInput').value.trim();
+      if (p === adminPassword) {
+        isAdminLoggedIn = true;
+        sessionStorage.setItem('sinopcepte_admin_logged', '1');
+        closeLoginModal();
+        applyAdminUI();
+        document.getElementById('adminPanelModal').classList.remove('hidden');
+        renderAdminList();
+      } else {
+        document.getElementById('loginError').classList.remove('hidden');
+      }
+    }
+
+    function closeAdminPanel() {
+      document.getElementById('adminPanelModal').classList.add('hidden');
+    }
+
+    function adminLogout() {
+      isAdminLoggedIn = false;
+      sessionStorage.removeItem('sinopcepte_admin_logged');
+      closeAdminPanel();
+      applyAdminUI();
+      alert('Yönetici çıkışı yapıldı.');
+    }
+
+    function renderAdminList() {
+      const listEl = document.getElementById('adminItemList');
+      const eventsHtml = appLiveEvents.map(item => `
+        <div class="flex items-center justify-between p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-white">
+          <div>
+            <span class="font-bold">${item.title}</span>
+            <span class="text-rose-400 ml-1">(${item.venue})</span>
+          </div>
+          <button onclick="deleteLiveEvent('${item.id}')" class="text-rose-400 font-bold px-2 py-0.5 hover:bg-rose-500/20 rounded">Sil</button>
+        </div>
+      `).join('');
+
+      const itemsHtml = appItems.map(item => `
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800">
+          <div>
+            <span class="font-bold text-white">${item.title}</span>
+            <span class="text-slate-400 ml-1">(${item.category})</span>
+          </div>
+          <button onclick="deleteAdminItem('${item.id}')" class="text-rose-500 font-bold px-2 py-0.5 hover:bg-rose-500/10 rounded">Sil</button>
+        </div>
+      `).join('');
+
+      listEl.innerHTML = eventsHtml + itemsHtml;
+    }
+
+    function saveAdminItem() {
+      const title = document.getElementById('adminTitle').value.trim();
+      const cat = document.getElementById('adminCategory').value;
+      const badge = document.getElementById('adminBadge').value.trim() || 'Aktif';
+      const location = document.getElementById('adminLocation').value.trim() || 'Sinop';
+      const phone = document.getElementById('adminPhone').value.trim();
+      const wa = document.getElementById('adminWa').value.trim() || '905555555555';
+      const desc = document.getElementById('adminDesc').value.trim() || 'Sinop güncel program.';
+
+      if (!title) {
+        alert('Lütfen başlık veya işletme adını girin.');
+        return;
+      }
+
+      if (cat === 'etkinlik') {
+        const newEv = {
+          id: 'ev-' + Date.now(),
+          title,
+          venue: location,
+          location: 'Sinop',
+          date: badge,
+          badge: '🔥 CANLI ETKİNLİK',
+          desc,
+          wa
+        };
+        appLiveEvents.unshift(newEv);
+        localStorage.setItem(EVENTS_KEY, JSON.stringify(appLiveEvents));
+        renderFeedStream();
+      } else {
+        const newItem = {
+          id: 'item-' + Date.now(),
+          category: cat,
+          title,
+          badge,
+          location,
+          desc,
+          phone,
+          wa,
+          rating: '4.8'
+        };
+        appItems.unshift(newItem);
+        localStorage.setItem(DATA_KEY, JSON.stringify(appItems));
+        renderFeedStream();
+      }
+
+      renderAdminList();
+      document.getElementById('adminTitle').value = '';
+      document.getElementById('adminBadge').value = '';
+      document.getElementById('adminDesc').value = '';
+      document.getElementById('adminPhone').value = '';
+      alert('Kayıt başarıyla eklendi ve akışa verildi!');
+    }
+
+    function deleteLiveEvent(id) {
+      if (!confirm('Bu etkinliği silmek istediğinize emin misiniz?')) return;
+      appLiveEvents = appLiveEvents.filter(e => e.id !== id);
+      localStorage.setItem(EVENTS_KEY, JSON.stringify(appLiveEvents));
+      renderFeedStream();
+      renderAdminList();
+    }
+
+    function deleteAdminItem(id) {
+      if (!confirm('Silmek istediğinize emin misiniz?')) return;
+      appItems = appItems.filter(i => i.id !== id);
+      localStorage.setItem(DATA_KEY, JSON.stringify(appItems));
+      renderFeedStream();
+      renderAdminList();
+    }
+  </script>
+</body>
+</html>
