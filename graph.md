@@ -131,6 +131,13 @@ N7, iki paralel alt düğüme bölündü: **N7a backend**, **N7b frontend**. İk
 | N7b | Frontend | build, typecheck, lint, test exit 0. Rumuz/şifre/instagram doğrulama yardımcılarının birim testleri (backend kurallarıyla aynı örnekler). Faz 1 testleri hâlâ geçer |
 | N7c | Bütünleştirme | compose up. `scripts/smoke.mjs` Faz 1'in 16 kontrolü + kayıt, giriş, profil düzenle, herkese açık profilde e-posta yok, USER admin'e 403, hesap sil → hepsi geçer |
 
+### Kapsam değişikliği (2026-11-09, kullanıcı kararı)
+
+- **N9 (Gizli itiraf paneli): şimdilik kapsam dışı.** Eklenmeyecek, ileride tekrar konuşulacak.
+- **N8 (Check-in & Mayor): ertelendi.** Sonraya bırakıldı.
+- **N10 ("Okeye 4." ilanları):** başlatılmadı, karar bekliyor.
+- N7'deki `checkinVisibility` ve `anonymousMode` alanları profil ekranında duruyor. Şu an bir işlevleri yok, bu iki modül gelince kullanılacak.
+
 ## Kenarlar
 
 ```

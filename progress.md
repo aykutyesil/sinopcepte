@@ -9,7 +9,7 @@
   - Canlıda HTTPS sonlandırma nginx'te yapılacaksa sertifika ayarı ve `SESSION_COOKIE_SECURE=true` gerekli (yapılmadı).
   - Şifre değişince diğer cihazlardaki oturumlar kapanmıyor; hız sınırı sayaçları bellekte (yeniden başlatınca sıfırlanır).
   - KVKK metni ve onay kutusu ifadesi hukukçu kontrolünden geçmeli.
-- **Sonraki adım:** N8 / N9 / N10 (paralel; ayrı Flyway aralıkları V20/V30/V40).
+- **Sonraki adım:** Kullanıcı mevcut hali yerelde inceliyor. N9 (itiraf) kapsam dışı, N8 (check-in) ertelendi, N10 karar bekliyor (2026-11-09).
 
 ## Faz 1 — tamamlandı (2026-11-08)
 
