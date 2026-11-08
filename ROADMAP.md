@@ -71,6 +71,25 @@ Sinop Üniversitesi öğrencilerini bir araya getiren; vize/final hazırlığı,
 
 ---
 
+## 🚖 6. Uzak Mesafe Ortak Taksi & Masraf Paylaşımı (Taxi Pooling)
+Sinop Havalimanı, Şehirlerarası Otogar, Üniversite Kampüsü veya geç saatlerde eve dönüşlerde taksi ücretini bölüşmek isteyenlerin yol arkadaşı bulmasını sağlayan akıllı taksi paylaşım sistemi.
+
+* **Popüler Güzergah Rozetleri:**
+  * ✈️ **Havalimanı Transferi:** *"Pazar 21:30 İstanbul uçağı için merkezden havalimanına ortak taksi"*
+  * 🚌 **Otogar Transferi:** *"Gece 01:00 otobüsü için çarşıdan otogara yoldaş"*
+  * 🎓 **Kampüs / Yurt Hattı:** *"Bostancılı Kampüsü veya KYK yurtlarından merkeze gidiş-dönüş"*
+  * 📍 **İlçeler Arası & Gece Dönüşü:** *"Gerze / Ayancık yönü veya gece kulübü çıkışı eve dönüş"*
+* **Koltuk & Kontenjan Sayacı:**
+  * *"2/4 Koltuk Dolu (2 Kişi Aranıyor)"* rozeti.
+  * Tahmini bütçe paylaşımı *(Örn: Taksi ~400 TL / Kişi Başı ~100 TL)*.
+* **"Koltuğa Talibim / Gelebilir miyim? 🙋‍♂️" Onayı:**
+  * Katılmak isteyen kişi biniş noktasını belirterek talep gönderir.
+  * İlan sahibi adayı onaylar; aralarında buluşma konumu ve saat koordinasyonu sağlanır.
+* **Taksi Durağı Entegrasyonu:**
+  * 4 koltuk tamamlandığında sistemdeki kayıtlı taksi durakları *(Meydan Taksi, Barış Taksi vb.)* tek tıkla aranarak ortak noktaya taksi çağrılır.
+
+---
+
 ## 🛠️ Uygulama Planı Önerisi
 ```mermaid
 flowchart TD
@@ -78,7 +97,9 @@ flowchart TD
     Auth --> Feed[4. 'Okeye 4.' İlan Akışı]
     Auth --> Itiraf[2. Gizli İtiraf Paneli]
     Auth --> Kampus[5. SNÜ Not Paylaşım Sekmesi]
+    Auth --> OrtakTaksi[6. Ortak Taksi & Yol Paylaşımı]
     CheckIn --> Mekanlar[(Mekan Kartları & Canlı Doluluk)]
     Feed --> SosyalRadar[(Canlı Etkinlik Radarı)]
     Kampus --> NotArsivi[(Fakülte & Ders Notları Havuzu)]
+    OrtakTaksi --> TaksiDuraklari[(7/24 Taksi Durakları API)]
 ```
