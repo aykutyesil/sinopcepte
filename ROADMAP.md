@@ -53,12 +53,32 @@ Anlık olarak masa kurmak, oyun oynamak veya etkinliğe yoldaş bulmak isteyenle
 
 ---
 
+## 🎓 5. Sinop Üniversitesi (SNÜ) Kampüs & Ders Notu Paylaşım Sekmesi
+Sinop Üniversitesi öğrencilerini bir araya getiren; vize/final hazırlığı, çıkmış sınav soruları ve ders özetlerinin paylaşılabileceği özel akademik dayanışma alanı.
+
+* **Özel Navigasyon Sekmesi:** Menü ve filtrelerde ayrı bir *"🎓 SNÜ Not & Kampüs"* sekmesi.
+* **Fakülte & Bölüm Filtreleme:**
+  * Fakülte / Yüksekokul seçimi *(Mühendislik-Mimarlık, Fen-Edebiyat, Eğitim, Sağlık Bilimleri, Meslek Yüksekokulu vb.)*.
+  * Bölüm ve Sınıf seçimi *(Örn: Bilgisayar Mühendisliği - 2. Sınıf)*.
+  * Not Türü Etiketleri: `📄 Vize Özeti`, `🎯 Final Çıkmışları`, `🧪 Lab Raporu`, `📑 Hoca Slaytı`.
+* **Not Paylaşım & Yükleme Modalı:**
+  * Ders adı, akademisyen/hoca adı (isteğe bağlı), dönem ve kısa açıklama.
+  * PDF, görsel (fotoğraf) yükleme veya bulut depolama linki (Google Drive / OneDrive / Yandex Disk).
+* **Öğrenci Oylaması & İndirme:**
+  * *"Bu not hayat kurtardı 👍"* oylama butonu ve toplam indirme/görüntülenme sayacı.
+  * Notun altına soru-cevap ve yorum alanı (*"Hoca sınavda bu sayfayı sordu mu?"*).
+* **Kampüs Rozeti:** Not yükleyip öğrencilere yardımcı olan kullanıcılara profillerinde sergileyebilecekleri *"🎓 Kampüs Notçusu"* rozeti.
+
+---
+
 ## 🛠️ Uygulama Planı Önerisi
 ```mermaid
 flowchart TD
     Auth[3. Kullanıcı Giriş & Profil Modülü] --> CheckIn[1. Swarm Check-In Sistemi]
     Auth --> Feed[4. 'Okeye 4.' İlan Akışı]
     Auth --> Itiraf[2. Gizli İtiraf Paneli]
+    Auth --> Kampus[5. SNÜ Not Paylaşım Sekmesi]
     CheckIn --> Mekanlar[(Mekan Kartları & Canlı Doluluk)]
     Feed --> SosyalRadar[(Canlı Etkinlik Radarı)]
+    Kampus --> NotArsivi[(Fakülte & Ders Notları Havuzu)]
 ```

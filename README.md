@@ -48,6 +48,7 @@ Detaylı plan için [ROADMAP.md](ROADMAP.md) belgesini inceleyebilirsiniz:
 * **🤫 Gizli İtiraf Paneli:** Anonim dedikodu ve itiraf akışı.
 * **👤 Kullanıcı Giriş & Profil:** Rozetler, istatistikler ve avatar yönetimi.
 * **🀄 "Okeye 4. Aranıyor" Feed'i:** "Gelebilir miyim? 🙋‍♂️" onaylı eşleşme ve aktivite bulma sistemi.
+* **🎓 SNÜ Kampüs & Not Paylaşımı:** Sinop Üniversitesi öğrencilerine özel fakülte/bölüm filtreli ders notları, çıkmış sorular ve akademik dayanışma havuzu.
 
 ---
 
