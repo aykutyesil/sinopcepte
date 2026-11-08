@@ -24,11 +24,13 @@ import com.sinopcepte.web.ApiError;
  *
  * <p>CsrfFilter yetkilendirmeden önce çalışır; oturumu olmayan biri CSRF token'sız POST attığında
  * normalde 403 alırdı. Oturumsuz istemci için asıl sorun kimlik olduğundan bu durumda 401 dönülür.
- * İstisna: {@code /api/auth/login} — orada CSRF eksikse 403 kalır (giriş CSRF'sine karşı koruma).
+ * İstisna: {@code /api/auth/login} ve {@code /api/auth/register} — orada CSRF eksikse 403 kalır
+ * (giriş/kayıt CSRF'sine karşı koruma).
  */
 public final class JsonSecurityHandlers implements AuthenticationEntryPoint, AccessDeniedHandler {
 
-    private static final String LOGIN_PATH = "/api/auth/login";
+    /** Herkese açık yazma uçları: CSRF eksikse oturumsuz istemciye de 403 (giriş/kayıt CSRF'sine karşı). */
+    private static final java.util.Set<String> CSRF_403_PATHS = java.util.Set.of("/api/auth/login", "/api/auth/register");
 
     private final AuthenticationTrustResolver trust = new AuthenticationTrustResolverImpl();
 
@@ -43,7 +45,7 @@ public final class JsonSecurityHandlers implements AuthenticationEntryPoint, Acc
             throws IOException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         boolean anonymous = auth == null || trust.isAnonymous(auth) || !auth.isAuthenticated();
-        if (anonymous && e instanceof CsrfException && !LOGIN_PATH.equals(pathOf(request))) {
+        if (anonymous && e instanceof CsrfException && !CSRF_403_PATHS.contains(pathOf(request))) {
             write(response, ApiError.of(401, "Unauthorized"));
             return;
         }

@@ -38,7 +38,8 @@ public class AdminBootstrap implements ApplicationRunner {
         if (users.existsByRole(Role.ADMIN)) {
             return;
         }
-        String username = props.username() == null ? "" : props.username().trim();
+        // Rumuzlar küçük harfle saklanır (V10 kısıtı); giriş de küçültüp arar.
+        String username = props.username() == null ? "" : Handles.normalize(props.username());
         String password = props.password() == null ? "" : props.password();
         if (username.isEmpty() || password.isEmpty()) {
             log.warn("Hiç ADMIN kullanıcı yok ve ADMIN_USERNAME / ADMIN_PASSWORD tanımlı değil; admin oluşturulmadı. "

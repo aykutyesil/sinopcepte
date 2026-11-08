@@ -2,7 +2,7 @@
 // Backend'e ulaşılamazsa paketlenmiş seed'e DÜŞMEZ; `null` döner ve arayüz hata durumunu gösterir.
 
 import { connection } from "next/server";
-import type { Item, LiveEvent, Pharmacy, PortalData } from "./types";
+import type { Item, LiveEvent, Pharmacy, PortalData, PublicProfile } from "./types";
 
 export function backendUrl(): string {
   return (process.env.BACKEND_URL || "http://localhost:8080").replace(/\/+$/, "");
@@ -41,4 +41,19 @@ export async function loadPortalData(): Promise<PortalData> {
     // 404 = bugün için kayıt yok (hata değil); diğer her şey hata.
     pharmacyError: !pharmacy.ok && pharmacy.status !== 404,
   };
+}
+
+export type PublicProfileResult =
+  | { kind: "ok"; profile: PublicProfile }
+  | { kind: "not-found" }
+  /** Backend'e ulaşılamadı / 5xx: "kullanıcı yok" DEĞİL. */
+  | { kind: "error" };
+
+/** `handle` çağıran tarafta doğrulanmış ve küçük harfe çevrilmiş olmalı. */
+export async function loadPublicProfile(handle: string): Promise<PublicProfileResult> {
+  await connection();
+  const r = await getJson<PublicProfile>(`/api/users/${encodeURIComponent(handle)}`);
+  if (r.ok && r.data && typeof r.data.handle === "string") return { kind: "ok", profile: r.data };
+  if (!r.ok && r.status === 404) return { kind: "not-found" };
+  return { kind: "error" };
 }

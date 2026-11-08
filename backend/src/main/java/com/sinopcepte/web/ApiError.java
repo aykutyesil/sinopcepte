@@ -4,16 +4,25 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-/** Tüm hata yanıtlarının ortak JSON şekli: {@code {"status":401,"error":"Unauthorized"}}. */
+/**
+ * Tüm hata yanıtlarının ortak JSON şekli: {@code {"status":401,"error":"Unauthorized"}}.
+ *
+ * <p>{@code details}: Faz 1 admin uçlarının doğrulama hataları ({@code "alan: mesaj"} metinleri).
+ * {@code errors}: N7'den itibaren alan bazlı hatalar ({@code [{field,message}]}); 400 ve 409'da dolu.
+ */
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public record ApiError(int status, String error, String message, List<String> details) {
+public record ApiError(int status, String error, String message, List<String> details, List<FieldError> errors) {
 
     public static ApiError of(int status, String error) {
-        return new ApiError(status, error, null, null);
+        return new ApiError(status, error, null, null, null);
     }
 
     public static ApiError of(int status, String error, String message) {
-        return new ApiError(status, error, message, null);
+        return new ApiError(status, error, message, null, null);
+    }
+
+    public static ApiError withErrors(int status, String error, String message, List<FieldError> errors) {
+        return new ApiError(status, error, message, null, errors);
     }
 
     /** Filtre katmanında (Spring MVC dışı) elle yazmak için. */

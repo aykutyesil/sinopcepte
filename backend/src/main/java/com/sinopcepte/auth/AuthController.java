@@ -1,7 +1,5 @@
 package com.sinopcepte.auth;
 
-import java.util.List;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -11,16 +9,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.context.SecurityContextHolderStrategy;
-import org.springframework.security.web.authentication.logout.CookieClearingLogoutHandler;
-import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
-import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
-import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfLogoutHandler;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,36 +22,26 @@ import com.sinopcepte.web.ApiError;
 @RequestMapping("/api/auth")
 public class AuthController {
 
+    /** {@code username}: rumuz veya e-posta (büyük/küçük harf duyarsız). */
     public record LoginRequest(String username, String password) {
     }
 
-    public record MeResponse(String username, List<String> roles) {
-
-        static MeResponse of(Authentication auth) {
-            List<String> roles = auth.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .filter(a -> a != null && a.startsWith("ROLE_"))
-                    .map(a -> a.substring("ROLE_".length()))
-                    .sorted()
-                    .toList();
-            return new MeResponse(auth.getName(), roles);
-        }
+    public record RegisterRequest(String handle, String email, String password, Boolean kvkkAccepted) {
     }
 
     private final AuthenticationManager authenticationManager;
-    private final SecurityContextRepository securityContextRepository;
-    private final SessionAuthenticationStrategy loginSessionStrategy;
-    private final CookieCsrfTokenRepository csrfTokenRepository;
-    private final SecurityContextHolderStrategy holder = SecurityContextHolder.getContextHolderStrategy();
+    private final SessionSupport sessions;
+    private final CurrentUser currentUser;
+    private final UserAccountService accounts;
+    private final AuthRateLimits rateLimits;
 
-    public AuthController(AuthenticationManager authenticationManager,
-                          SecurityContextRepository securityContextRepository,
-                          SessionAuthenticationStrategy loginSessionStrategy,
-                          CookieCsrfTokenRepository csrfTokenRepository) {
+    public AuthController(AuthenticationManager authenticationManager, SessionSupport sessions,
+                          CurrentUser currentUser, UserAccountService accounts, AuthRateLimits rateLimits) {
         this.authenticationManager = authenticationManager;
-        this.securityContextRepository = securityContextRepository;
-        this.loginSessionStrategy = loginSessionStrategy;
-        this.csrfTokenRepository = csrfTokenRepository;
+        this.sessions = sessions;
+        this.currentUser = currentUser;
+        this.accounts = accounts;
+        this.rateLimits = rateLimits;
     }
 
     /**
@@ -76,10 +54,16 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Hız sınırı parola denetiminden <b>önce</b> uygulanır: sınır dolunca doğru parola da 429 alır.
+     * Yalnız başarısız denemeler sayılır.
+     */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody(required = false) LoginRequest body,
                                    HttpServletRequest request, HttpServletResponse response) {
+        rateLimits.checkLogin(request);
         if (body == null || body.username() == null || body.password() == null) {
+            rateLimits.recordLoginFailure(request);
             return unauthorized();
         }
         Authentication auth;
@@ -87,40 +71,48 @@ public class AuthController {
             auth = authenticationManager.authenticate(
                     UsernamePasswordAuthenticationToken.unauthenticated(body.username(), body.password()));
         } catch (AuthenticationException e) {
+            rateLimits.recordLoginFailure(request);
             return unauthorized();
         }
-        // Oturum sabitleme koruması (session id değişir) + CSRF token'ını yenile.
-        loginSessionStrategy.onAuthentication(auth, request, response);
+        sessions.establish(auth, request, response);
+        return ResponseEntity.ok(MeResponse.of(currentUser.require(auth)));
+    }
 
-        SecurityContext context = holder.createEmptyContext();
-        context.setAuthentication(auth);
-        holder.setContext(context);
-        securityContextRepository.saveContext(context, request, response);
+    /**
+     * Kayıt + otomatik giriş (giriş ile aynı oturum/CSRF yenileme). Sayaç: 400 doğrulama hataları
+     * sayılmaz; geçerli gövdeli her deneme (201 veya 409) sayılır.
+     */
+    @PostMapping("/register")
+    public ResponseEntity<MeResponse> register(@RequestBody(required = false) RegisterRequest body,
+                                               HttpServletRequest request, HttpServletResponse response) {
+        rateLimits.checkRegister(request);
+        RegisterRequest b = body == null ? new RegisterRequest(null, null, null, null) : body;
+        UserAccountService.Registration valid =
+                accounts.validateRegistration(b.handle(), b.email(), b.password(), b.kvkkAccepted());
+        rateLimits.recordRegister(request);
+        AppUser created = accounts.create(valid);
 
-        // Yenilenen token'ı hemen yükle ki yeni XSRF-TOKEN çerezi bu yanıtla gitsin.
-        Object fresh = request.getAttribute(CsrfToken.class.getName());
-        if (fresh instanceof CsrfToken t) {
-            t.getToken();
-        }
-        return ResponseEntity.ok(MeResponse.of(auth));
+        AppUserPrincipal principal = AppUserPrincipal.of(created);
+        principal.eraseCredentials();
+        Authentication auth = UsernamePasswordAuthenticationToken.authenticated(
+                principal, null, principal.getAuthorities());
+        sessions.establish(auth, request, response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(MeResponse.of(created));
     }
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(Authentication auth, HttpServletRequest request, HttpServletResponse response) {
-        SecurityContextLogoutHandler logout = new SecurityContextLogoutHandler();
-        logout.setSecurityContextRepository(securityContextRepository);
-        logout.logout(request, response, auth);
-        new CsrfLogoutHandler(csrfTokenRepository).logout(request, response, auth);
-        new CookieClearingLogoutHandler("JSESSIONID").logout(request, response, auth);
+        sessions.terminate(auth, request, response);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/me")
     public MeResponse me(Authentication auth) {
-        return MeResponse.of(auth);
+        return MeResponse.of(currentUser.require(auth));
     }
 
     private static ResponseEntity<ApiError> unauthorized() {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiError.of(401, "Unauthorized", "Kullanıcı adı veya parola hatalı"));
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiError.of(401, "Unauthorized", "Kullanıcı adı veya parola hatalı"));
     }
 }

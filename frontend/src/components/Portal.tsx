@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { buildFeed } from "@/lib/feed";
 import { fetchMe, isAdmin as hasAdminRole, logout } from "@/lib/client-api";
-import type { FeedFilter, PortalData } from "@/lib/types";
+import type { AuthUser, FeedFilter, PortalData } from "@/lib/types";
 import { useWeather } from "@/hooks/useWeather";
 import { Dock } from "./Dock";
 import { FeedHeader } from "./FeedHeader";
@@ -21,7 +21,9 @@ export function Portal({ data }: { data: PortalData | null }) {
 
   const [filter, setFilter] = useState<FeedFilter>("all");
   const [query, setQuery] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false);
+  /** `undefined` = henüz bilinmiyor, `null` = oturum yok. */
+  const [me, setMe] = useState<AuthUser | null | undefined>(undefined);
+  const isAdmin = hasAdminRole(me ?? null);
   const [loginOpen, setLoginOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
 
@@ -33,12 +35,13 @@ export function Portal({ data }: { data: PortalData | null }) {
 
   const feed = useMemo(() => buildFeed({ events, items, filter, query }), [events, items, filter, query]);
 
-  // Oturum çerezi varsa admin durumunu backend'den al (legacy: sessionStorage bayrağı).
+  // Oturum çerezi varsa kullanıcıyı backend'den al (legacy: sessionStorage bayrağı). Sayfa
+  // <Activity> ile gizlenip geri geldiğinde efekt yeniden çalışır → giriş/çıkış/profil değişikliği yansır.
   useEffect(() => {
     if (loading) return;
     let alive = true;
     fetchMe().then((u) => {
-      if (alive) setIsAdmin(hasAdminRole(u));
+      if (alive) setMe(u);
     });
     return () => {
       alive = false;
@@ -64,7 +67,7 @@ export function Portal({ data }: { data: PortalData | null }) {
     } catch {
       // Oturum zaten düşmüş olabilir; arayüz yine de çıkış durumuna geçer.
     }
-    setIsAdmin(false);
+    setMe(null);
     setPanelOpen(false);
     alert("Yönetici çıkışı yapıldı.");
   };
@@ -72,7 +75,7 @@ export function Portal({ data }: { data: PortalData | null }) {
   return (
     <>
       <div className="max-w-7xl mx-auto flex min-h-screen w-full overflow-x-hidden">
-        <Dock filter={filter} onFilter={handleFilter} onSecretTrigger={openAdmin} />
+        <Dock filter={filter} onFilter={handleFilter} onSecretTrigger={openAdmin} me={me} />
 
         <main className="flex-1 min-w-0 w-full max-w-2xl border-r border-slate-800 p-2.5 xs:p-3 sm:p-6 pb-20 overflow-x-hidden">
           <FeedHeader
@@ -100,9 +103,11 @@ export function Portal({ data }: { data: PortalData | null }) {
         <AdminLoginModal
           onClose={() => setLoginOpen(false)}
           onSuccess={() => {
-            setIsAdmin(true);
+            // Modal yalnız ADMIN rolünü doğruladıktan sonra çağırır; dock için tam `Me` yeniden okunur.
+            setMe((prev) => (hasAdminRole(prev ?? null) ? prev : { username: "", roles: ["ADMIN"] }));
             setLoginOpen(false);
             setPanelOpen(true);
+            fetchMe().then(setMe);
           }}
         />
       )}
@@ -114,7 +119,7 @@ export function Portal({ data }: { data: PortalData | null }) {
           onClose={() => setPanelOpen(false)}
           onChanged={() => router.refresh()}
           onUnauthorized={() => {
-            setIsAdmin(false);
+            setMe(null);
             setPanelOpen(false);
           }}
         />

@@ -51,9 +51,48 @@ export interface Pharmacy {
   updatedAt: string;
 }
 
+/** `GET /api/auth/me` (`Me`). N7 öncesi backend yalnız `{username, roles}` döndürdüğü için `handle`/`avatar` isteğe bağlı. */
 export interface AuthUser {
+  /** Geriye dönük uyum: N7'den sonra `handle` ile aynı. */
   username: string;
   roles: string[];
+  handle?: string;
+  avatar?: string;
+}
+
+export type CheckinVisibility = "PUBLIC" | "HIDDEN";
+
+/** `GET/PUT /api/me/profile`. */
+export interface OwnProfile {
+  handle: string;
+  /** N7 öncesi admin satırında boş olabilir. */
+  email: string | null;
+  avatar: string;
+  bio: string | null;
+  instagram: string | null;
+  checkinVisibility: CheckinVisibility;
+  anonymousMode: boolean;
+  createdAt: string;
+  roles: string[];
+}
+
+/** `PUT /api/me/profile` gövdesi (5 alanın hepsi gönderilir). */
+export interface ProfileUpdate {
+  avatar: string;
+  bio: string;
+  instagram: string;
+  checkinVisibility: CheckinVisibility;
+  anonymousMode: boolean;
+}
+
+/** `GET /api/users/{handle}`. Asla e-posta, rol veya gizlilik ayarı içermez. Rozet şekli N8'de belirlenecek. */
+export interface PublicProfile {
+  handle: string;
+  avatar: string;
+  bio: string | null;
+  instagram: string | null;
+  createdAt: string;
+  badges: unknown[];
 }
 
 /** Sunucuda çekilen ilk veri. `null` = backend'e ulaşılamadı / hata. */

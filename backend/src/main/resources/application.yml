@@ -36,6 +36,17 @@ app:
     # Hiç ADMIN yoksa açılışta bu bilgilerle oluşturulur. Varsayılan YOK.
     username: ${ADMIN_USERNAME:}
     password: ${ADMIN_PASSWORD:}
+  kvkk:
+    # Kayıtta onaylanan aydınlatma metni sürümü (app_user.kvkk_version). Metin değişince artırın.
+    version: ${KVKK_VERSION:taslak-1}
+  rate-limit:
+    # IP başına (request.getRemoteAddr(); vekil arkasında X-Forwarded-For'un en soldaki değeri).
+    login:          # pencere içinde izin verilen BAŞARISIZ giriş sayısı; dolunca 429
+      max: ${LOGIN_RATE_LIMIT_MAX:10}
+      window: ${LOGIN_RATE_LIMIT_WINDOW:10m}
+    register:       # pencere içinde izin verilen kayıt denemesi (400 doğrulama hataları sayılmaz)
+      max: ${REGISTER_RATE_LIMIT_MAX:5}
+      window: ${REGISTER_RATE_LIMIT_WINDOW:1h}
   pharmacy:
     fetch-enabled: ${PHARMACY_FETCH_ENABLED:true}
     url: ${PHARMACY_URL:https://www.eczaneler.gen.tr/iframe.php?lokasyon=1627}

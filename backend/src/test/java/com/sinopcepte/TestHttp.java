@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import tools.jackson.databind.JsonNode;
@@ -18,6 +19,9 @@ import tools.jackson.databind.json.JsonMapper;
 /**
  * Tarayıcı gibi davranan küçük test istemcisi: Set-Cookie başlıklarını kendi çerez kavanozunda tutar,
  * sonraki isteklere Cookie olarak ekler. Yönlendirme takip etmez (401 yerine redirect gelirse görülsün).
+ *
+ * <p>Her istemci kendine ait bir {@code X-Forwarded-For} IP'siyle gelir (vekil arkasındaki ayrı bir tarayıcı
+ * gibi). Böylece IP başına hız sınırı sayaçları testler arasında karışmaz.
  */
 public final class TestHttp {
 
@@ -44,6 +48,7 @@ public final class TestHttp {
     }
 
     private static final JsonMapper JSON = JsonMapper.builder().build();
+    private static final AtomicInteger NEXT_IP = new AtomicInteger(1);
 
     private final String base;
     private final HttpClient client = HttpClient.newBuilder()
@@ -51,9 +56,26 @@ public final class TestHttp {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
     private final Map<String, String> cookies = new LinkedHashMap<>();
+    private final String ip;
 
     public TestHttp(String base) {
+        this(base, nextIp());
+    }
+
+    /** {@code ip}: bu istemcinin X-Forwarded-For değeri; null ise başlık gönderilmez. */
+    public TestHttp(String base, String ip) {
         this.base = base;
+        this.ip = ip;
+    }
+
+    /** 10.x.y.z biçiminde, süreç içinde tekil bir IP. */
+    public static String nextIp() {
+        int n = NEXT_IP.getAndIncrement();
+        return "10." + ((n >> 16) & 0xff) + "." + ((n >> 8) & 0xff) + "." + (n & 0xff);
+    }
+
+    public String ip() {
+        return ip;
     }
 
     public String cookie(String name) {
@@ -67,6 +89,9 @@ public final class TestHttp {
     public Res send(String method, String path, String jsonBody, String csrfHeader) {
         HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(base + path)).timeout(Duration.ofSeconds(30));
         b.header("Accept", "application/json");
+        if (ip != null) {
+            b.header("X-Forwarded-For", ip);
+        }
         if (jsonBody != null) {
             b.header("Content-Type", "application/json");
         }

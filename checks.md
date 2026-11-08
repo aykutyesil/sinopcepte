@@ -18,5 +18,12 @@ N5 | Testler kalabiliyor mu | geçti (ajan raporu) | Mutasyonlar: arama alanınd
 N6 | compose up | geçti | `docker compose -p sinopcepte up --build -d` exit 0; db healthy; `/actuator/health` UP
 N6 | Uçtan uca API + sayfa + admin akışı (CSRF dahil) | geçti | `node scripts/smoke.mjs` → 16/16, exit 0 (frontend kökeni üzerinden: seed id sırası, eczane canlı çekildi "Elif Eczanesi", e-1 birleşik, 401'ler, login, item oluştur/sil, çıkış)
 N6 | Görsel eşdeğerlik | geçti (model kanaati + ölçüm) | `docs/n6/*.png` ↔ `docs/baseline/*.png`. Ölçüm: sayfa yükseklikleri birebir (1440→4683 px, 390→4828 px). Göz kontrolü: tek fark sağ kolon taksi/kurye listelerinin veriden gelmesi (P10, bilinçli). Piksel karşılaştırması yapılmadı
-N7–N10 | Faz 2 | çözülmedi | Faz 1 onayı bekleniyor
+N7a | `mvnw -q clean verify` çıkış 0 | geçti | Ana oturumda: exit 0; 13 sınıf, 53 test (Faz 1'in 29'u dahil), 0 failure/error/skipped
+N7a | Testler kalabiliyor mu | geçti (ajan raporu) | 7 mutasyon (rumuz küçültme, PublicProfile'a e-posta, hız sınırı, admin silme koruması, id yerine rumuzla çözümleme, avatar doğrulama, ayrılmış rumuz) → hepsi yakalandı; geri yükleme sha256 ile doğrulandı. Ana oturumda tekrarlanmadı
+N7b | build / typecheck / lint / test temiz | geçti | Ana oturumda: 4 komut exit 0; Vitest 4 dosya, 76/76 (Faz 1'in 44'ü dahil)
+N7b | Testler kalabiliyor mu | geçti (ajan raporu) | 3 mutasyon → 4 test kırıldı, geri alındı
+N7c | compose up + V10 migration canlı DB'de | geçti | Flyway: `Migrating schema "public" to version "10 - user profile"` → `now at version v10`
+N7c | Uçtan uca duman testi | geçti | `node scripts/smoke.mjs --n7` → 34/34, exit 0 (Faz 1'in 16'sı + N7'nin 18'i)
+N7c | Hız sınırı sahte IP ile aşılamaz | **kaldı** | Ölçüm (frontend :3100 üzerinden): aynı sahte `X-Forwarded-For` ile 11. deneme 429; **farklı sahte IP ile 12. deneme 401** → istemci başlığı Next rewrite'tan geçiyor, sınırlayıcı ona güveniyor. Düzeltme: güvenilir proxy (nginx `X-Forwarded-For $remote_addr`) veya sınırlayıcının yalnız güvenilir hop'u okuması. Açık
+N8–N10 | Faz 2 devamı | çözülmedi | N7 onayı bekleniyor
 N11 | PR (kullanıcı onayıyla) | çözülmedi | push yetkisi yok (`push:false`)

@@ -5,3 +5,14 @@ app:
   admin:
     username: test-admin
     password: test-admin-parola-123
+  kvkk:
+    version: test-kvkk-1
+  # Düşük sınırlar: 429 birkaç istekte sınanır. Her test istemcisi ayrı bir X-Forwarded-For IP'si
+  # kullanır (TestHttp), sayaçlar testler arasında karışmaz.
+  rate-limit:
+    login:
+      max: 3
+      window: 10m
+    register:
+      max: 3
+      window: 1h

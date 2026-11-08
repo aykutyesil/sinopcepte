@@ -1,5 +1,16 @@
 # İlerleme
 
+## Faz 2 / N7 — kullanıcı giriş & profil: tamamlandı, 1 açık risk (2026-11-08)
+
+- **Grafik:** N7a (backend), N7b (frontend), N7c (bütünleştirme) geçti. Hız sınırı güvenilirliği **kaldı** (aşağıda). N8, N9, N10 bekliyor.
+- **Çıktılar:** `backend/` V10 migration + kayıt/giriş/profil/şifre/silme/hız sınırı (53 test); `frontend/` `/giris`, `/kayit`, `/profil`, `/u/[handle]`, `/kvkk` (TASLAK) + dock hesap düğmesi (76 test); `scripts/smoke.mjs --n7` (34 kontrol).
+- **Kararlar:** misafir = hesapsız gezinme; avatar sabit listeden; e-posta doğrulama/şifre sıfırlama yok; ADMIN profili herkese kapalı (404).
+- **Bekleyenler:**
+  - **Hız sınırı sahte `X-Forwarded-For` ile aşılıyor** (ölçüldü). Güvenilir proxy ya da yalnız güvenilir hop'u okuma gerekiyor.
+  - Şifre değişince diğer cihazlardaki oturumlar kapanmıyor; hız sınırı sayaçları bellekte (yeniden başlatınca sıfırlanır).
+  - KVKK metni ve onay kutusu ifadesi hukukçu kontrolünden geçmeli.
+- **Sonraki adım:** Hız sınırı düzeltmesi, ardından N8 / N9 / N10 (paralel).
+
 ## Faz 1 — tamamlandı (2026-11-08)
 
 - **Grafik:** N0, N1, N2, N3, N4, N5, N6 geçti. N7–N11 bekliyor.

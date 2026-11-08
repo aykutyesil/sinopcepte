@@ -1,6 +1,8 @@
 "use client";
 
-import type { FeedFilter } from "@/lib/types";
+import Link from "next/link";
+import { avatarEmoji } from "@/lib/avatars";
+import type { AuthUser, FeedFilter } from "@/lib/types";
 import { useSecretClick } from "@/hooks/useSecretClick";
 import { useThemePreference } from "@/hooks/useThemePreference";
 
@@ -20,6 +22,10 @@ const NAV: { filter: FeedFilter; icon: string; label: string }[] = [
 // sınıfları düşüren farklı bir dize yazıyordu (hata); burada her durumda işaretlemedeki dize kullanılır.
 const ACTIVE =
   "w-full p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-rose-600 text-white font-bold text-xs flex items-center justify-center md:justify-start gap-3 transition";
+// Alt araç düğmeleri (tema + hesap) aynı dizeyi paylaşır.
+const TOOL =
+  "w-full min-w-0 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center md:justify-start gap-2 transition";
+
 const INACTIVE =
   "w-full p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-slate-400 hover:text-white hover:bg-slate-900 font-semibold text-xs flex items-center justify-center md:justify-start gap-3 transition";
 
@@ -27,10 +33,13 @@ export function Dock({
   filter,
   onFilter,
   onSecretTrigger,
+  me,
 }: {
   filter: FeedFilter;
   onFilter: (f: FeedFilter) => void;
   onSecretTrigger: () => void;
+  /** `undefined` = oturum durumu henüz bilinmiyor (yer tutucu), `null` = oturum yok. */
+  me: AuthUser | null | undefined;
 }) {
   const onLogoClick = useSecretClick(onSecretTrigger);
   const theme = useThemePreference();
@@ -74,18 +83,42 @@ export function Dock({
         </nav>
       </div>
 
-      {/* Alt Araçlar: Tema */}
+      {/* Alt Araçlar: Hesap + Tema */}
       <div className="pt-3 sm:pt-4 border-t border-slate-800 space-y-2">
-        <button
-          type="button"
-          onClick={theme.toggle}
-          className="w-full p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center md:justify-start gap-2 transition"
-          title="Görünüm Modu"
-        >
+        <AccountButton me={me} />
+        <button type="button" onClick={theme.toggle} className={TOOL} title="Görünüm Modu">
           <span>{theme.icon}</span>
           <span className="hidden md:inline">Görünüm Modu</span>
         </button>
       </div>
     </aside>
+  );
+}
+
+function AccountButton({ me }: { me: AuthUser | null | undefined }) {
+  const handle = me ? me.handle || me.username : "";
+  if (me === undefined || (me && !handle)) {
+    // Oturum bilinmeden "Giriş Yap" gösterilirse girişli kullanıcıda yanıp söner.
+    // (Admin modal girişinden hemen sonra `Me` yeniden okunurken de rumuz boştur.)
+    return (
+      <div className={`${TOOL} pointer-events-none`} aria-hidden="true" data-testid="account-placeholder">
+        <span className="w-4 h-4 rounded-full bg-slate-800 animate-pulse shrink-0" />
+        <span className="hidden md:inline h-3 w-20 rounded-sm bg-slate-800 animate-pulse" />
+      </div>
+    );
+  }
+  if (me === null) {
+    return (
+      <Link href="/giris" className={TOOL} title="Giriş Yap" data-testid="account-login">
+        <span className="shrink-0">🔑</span>
+        <span className="hidden md:inline">Giriş Yap</span>
+      </Link>
+    );
+  }
+  return (
+    <Link href="/profil" className={TOOL} title={`@${handle} — Profilim`} data-testid="account-profile">
+      <span className="shrink-0 text-base leading-none">{avatarEmoji(me.avatar)}</span>
+      <span className="hidden md:inline truncate min-w-0">@{handle}</span>
+    </Link>
   );
 }

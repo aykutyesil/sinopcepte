@@ -2,12 +2,17 @@
 // Oturum HttpOnly çerezde; CSRF için Spring'in `XSRF-TOKEN` çerezi her yazmadan önce TAZE okunur
 // (giriş/çıkış token'ı döndürür) ve `X-XSRF-TOKEN` başlığında gönderilir.
 
-import type { AuthUser, Item, LiveEvent } from "./types";
+import { parseRetryAfter } from "./api-errors";
+import type { AuthUser, Item, LiveEvent, OwnProfile, ProfileUpdate } from "./types";
 
 export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    /** Hata yanıtının JSON gövdesi (okunamazsa `null`). */
+    public body: unknown = null,
+    /** 429 için `Retry-After` (saniye), yoksa `null`. */
+    public retryAfter: number | null = null,
   ) {
     super(message);
   }
@@ -44,7 +49,23 @@ async function write(method: "POST" | "PUT" | "DELETE", path: string, body?: unk
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) throw new ApiError(res.status, `${method} ${path} -> ${res.status}`);
+  if (!res.ok) throw await toApiError(res, `${method} ${path}`);
+  return res;
+}
+
+async function toApiError(res: Response, what: string): Promise<ApiError> {
+  let body: unknown = null;
+  try {
+    body = await res.json();
+  } catch {
+    // Gövde yok ya da JSON değil.
+  }
+  return new ApiError(res.status, `${what} -> ${res.status}`, body, parseRetryAfter(res.headers.get("Retry-After"), Date.now()));
+}
+
+async function readJson(path: string): Promise<Response> {
+  const res = await fetch(path, { credentials: "same-origin", cache: "no-store", headers: { Accept: "application/json" } });
+  if (!res.ok) throw await toApiError(res, `GET ${path}`);
   return res;
 }
 
@@ -69,6 +90,39 @@ export async function login(username: string, password: string): Promise<AuthUse
 
 export async function logout(): Promise<void> {
   await write("POST", "/api/auth/logout");
+}
+
+export interface RegisterRequest {
+  handle: string;
+  email: string;
+  password: string;
+  kvkkAccepted: boolean;
+}
+
+/** 201 `Me`, oturum açılmış olarak. Backend JSESSIONID ve XSRF-TOKEN'ı yeniler. */
+export async function register(req: RegisterRequest): Promise<AuthUser> {
+  const res = await write("POST", "/api/auth/register", req);
+  return (await res.json()) as AuthUser;
+}
+
+export async function fetchOwnProfile(): Promise<OwnProfile> {
+  const res = await readJson("/api/me/profile");
+  return (await res.json()) as OwnProfile;
+}
+
+export async function updateOwnProfile(update: ProfileUpdate): Promise<OwnProfile> {
+  const res = await write("PUT", "/api/me/profile", update);
+  return (await res.json()) as OwnProfile;
+}
+
+/** 204. Yanlış mevcut şifre → 401 (`errors[0].field = currentPassword`), oturum düşmüş sayılmaz. */
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  await write("PUT", "/api/me/password", { currentPassword, newPassword });
+}
+
+/** 204, oturum kapanır. ADMIN → 403. */
+export async function deleteAccount(password: string): Promise<void> {
+  await write("DELETE", "/api/me", { password });
 }
 
 export type NewItem = Omit<Item, "id"> & { id?: string };

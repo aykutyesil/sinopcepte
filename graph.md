@@ -72,6 +72,65 @@ Alan adları seed JSON ile birebir: `id, category, title, badge, location, phone
 | N10 | "Okeye 4." ilan akışı | N7 | Süresi dolan ilan listede yok; "Gelebilir miyim?" isteği; yalnız ilan sahibi kabul/ret yapabiliyor; iletişim bilgisi yalnız kabul edilen adaya açılıyor | Kontenjan dolunca bekleyenlere bildirim |
 | N11 | Belgeler & PR | hepsi | README güncel; `checks.md` tüm satırlar dolu; PR açıldı (push öncesi kullanıcı onayı) | |
 
+### N7 ayrıntısı — Kullanıcı giriş & profil
+
+N7, iki paralel alt düğüme bölündü: **N7a backend**, **N7b frontend**. İkisi aşağıdaki sözleşmeyi paylaşır, birbirinin klasörüne dokunmaz. Sonra ana oturum duman testini genişletir (**N7c**).
+
+**Kapsam kararları** (ROADMAP §3'ten; gerekçeleriyle):
+- **"Misafir modu"** = hesapsız gezinme. Site zaten hesapsız geziliyor; misafir hesabı açılmaz. Kimlik gerektiren işlemler (check-in, itiraf, ilan) girişe yönlendirir.
+- **Avatar** = sabit listeden seçim. Dosya yükleme yok: depolama ve görsel moderasyon yükü doğmaz.
+- **E-posta doğrulama ve şifre sıfırlama yok.** Bunlar için posta altyapısı gerekiyor → açık iş olarak kaydedildi.
+- **KVKK:** kayıtta aydınlatma metni onayı zorunlu. `kvkk_accepted_at` ve `kvkk_version` saklanır. `/kvkk` sayfası **TASLAK** yer tutucudur, gerçek metin hukukçudan gelecek.
+- **Hesap silme var:** KVKK silme hakkı.
+- **Kaba kuvvet koruması:** giriş ve kayıtta IP başına hız sınırı.
+- **Mevcut admin hesabı çalışmaya devam eder.** `username` kolonu rumuz (handle) olarak kullanılır.
+
+**Rumuz kuralları:**
+- 3–20 karakter, `^[a-z0-9_.]+$`. Küçük harfe çevrilerek saklanır, büyük/küçük harf duyarsız tekildir.
+- Ayrılmış rumuzlar: `admin, root, sinopcepte, destek, moderator, api, giris, kayit, profil, kvkk`.
+- Şifre en az 8 karakter. E-posta tekil, küçük harf.
+
+**Avatar anahtarları:** `marti 🕊️, hamsi 🐟, fener 🗼, kale 🏰, dalga 🌊, capa ⚓, balik 🐠, yildiz ⭐, gunes ☀️, ay 🌙, kedi 🐱, yunus 🐬`. Varsayılan `marti`.
+
+| Metot | Yol | Yetki | Gövde → Yanıt |
+|---|---|---|---|
+| POST | `/api/auth/register` | herkes | `{handle,email,password,kvkkAccepted}` → 201 `Me`, oturum açılmış olarak. 400 doğrulama (`{field,message}` listesi), 409 rumuz veya e-posta dolu |
+| POST | `/api/auth/login` | herkes | `{username,password}`. `username` rumuz **veya** e-posta → 200 `Me` / 401 / 429 |
+| GET | `/api/auth/me` | — | 200 `Me` / 401 |
+| GET | `/api/me/profile` | USER/ADMIN | 200 `OwnProfile` |
+| PUT | `/api/me/profile` | USER/ADMIN | `{avatar,bio,instagram,checkinVisibility,anonymousMode}` → 200 `OwnProfile` |
+| PUT | `/api/me/password` | USER/ADMIN | `{currentPassword,newPassword}` → 204 / 400 / 401 (mevcut şifre yanlış) |
+| DELETE | `/api/me` | USER | `{password}` → 204, oturum kapanır. ADMIN kendini silemez → 403 |
+| GET | `/api/users/{handle}` | herkes | 200 `PublicProfile` / 404 |
+
+**Tipler:**
+- `Me`: `{username, roles, handle, avatar}`. `username` = `handle`; `username` geriye dönük uyum için kalır.
+- `OwnProfile`: `{handle, email, avatar, bio, instagram, checkinVisibility, anonymousMode, createdAt, roles}`.
+- `PublicProfile`: `{handle, avatar, bio, instagram, createdAt, badges: []}`. **Asla e-posta, rol veya gizlilik ayarı içermez.**
+- `checkinVisibility`: `PUBLIC | HIDDEN`. N8 bunu kullanacak.
+
+**Alan sınırları:**
+- `bio` en fazla 160 karakter.
+- `instagram` boş ya da `^[A-Za-z0-9_.]{1,30}$`. Yalnız kullanıcı adı saklanır, URL değil.
+
+**Hız sınırı (IP başına):**
+- login: 10 dakikada 10 başarısız deneme → 429.
+- register: saatte 5 → 429.
+- Sınırlar ayarla değiştirilebilir; testlerde düşük değerle sınanır.
+
+**Migration:** `V10__user_profile.sql`. Mevcut satırlar (admin) korunur.
+
+**Frontend sayfaları:**
+- `/giris`, `/kayit`, `/profil` (kendi profilin, düzenleme), `/u/[handle]` (herkese açık profil), `/kvkk` (TASLAK).
+- Sol dock'ta tema düğmesinin üstünde: oturum yoksa "Giriş Yap", varsa avatar + rumuz → `/profil`.
+- Admin'in gizli 3 tık girişi aynen kalır.
+
+| # | Düğüm | Kontrol |
+|---|---|---|
+| N7a | Backend | `./mvnw -q verify` exit 0. Faz 1 testleri hâlâ geçer. Yeni testler: kayıt başarı ve oturum; rumuz çakışması büyük/küçük harf duyarsız 409; e-posta 409; geçersiz rumuz, ayrılmış rumuz, kısa şifre, `kvkkAccepted=false` → 400; rumuz ve e-posta ile giriş; USER → `/api/admin/**` 403; `PublicProfile` JSON anahtar kümesi tam olarak sözleşmedeki küme; geçersiz avatar 400; şifre değiştirme mevcut şifreyi ister; silme sonrası giriş 401; admin silinemez 403; hız sınırı 429; V10 sonrası admin girişi çalışır |
+| N7b | Frontend | build, typecheck, lint, test exit 0. Rumuz/şifre/instagram doğrulama yardımcılarının birim testleri (backend kurallarıyla aynı örnekler). Faz 1 testleri hâlâ geçer |
+| N7c | Bütünleştirme | compose up. `scripts/smoke.mjs` Faz 1'in 16 kontrolü + kayıt, giriş, profil düzenle, herkese açık profilde e-posta yok, USER admin'e 403, hesap sil → hepsi geçer |
+
 ## Kenarlar
 
 ```
@@ -124,4 +183,9 @@ Faz 1'den (kabul edilen sonuçlardan) çıkan kurallar. Sonraki düğümler bunl
 - **Fontlar:** Cabinet Grotesk Google Fonts'ta yok (eski site de yedeğe düşüyordu). Plus Jakarta Sans en fazla 800.
 - **Bu makinede port çakışması:** 8080 (başka Spring projesi) ve 3000 (`isg-frontend` konteyneri) dolu. Yerel `.env`: `DB_PORT=5440 BACKEND_PORT=8180 FRONTEND_PORT=3100`. Başka projenin sürecine dokunma.
 - **Frontend testleri** seed JSON'u `../backend/...` yolundan okur; bu yüzden `*.test.ts` Docker bağlamına girmez, testler yerelde/CI'da koşar.
-- **Doğrulama zinciri:** `backend: ./mvnw -q verify` → `frontend: npm run build && npm run typecheck && npm run lint && npm run test` → `docker compose -p sinopcepte up --build -d` → `node scripts/smoke.mjs` → `node scripts/screenshot.mjs http://localhost:3100/ docs/n6`.
+- **N7 (ölçüldü):** Kimlik çözümlemesi id ile yapılır (`CurrentUser.require(auth)`); silinen hesabın oturumu 401 alır. Kullanıcı silinmeden önce `UserDeletionEvent` yayınlanır: N8 check-in'leri `on delete cascade`, N9/N10 içerikleri `set null` + anonimleştirme. Hata gövdesi `{status,error,message,errors:[{field,message}]}`, 429'da `Retry-After`. ADMIN'in herkese açık profili 404.
+- **Next PPR ile `notFound()` HTTP 200 + noindex döner** (akış başladıktan sonra çalışıyor). Testlerde sayfa durumuna değil API'nin 404'üne bak.
+- **`X-Forwarded-For` istemciden geçiyor** (ölçüm: sahte IP ile hız sınırı aşıldı). Canlıya çıkmadan önce güvenilir proxy şart; IP'ye dayalı her yeni kural bunu hesaba katmalı.
+- **Arka planda başlatılan `next dev` TaskStop'tan sonra da portu dinlemeye devam edebilir;** dinleyen PID'yi bulup kapat.
+- **Duman testi her koşuda 1 kayıt harcar;** kayıt sınırı IP başına saatte 5.
+- **Doğrulama zinciri:** `backend: ./mvnw -q verify` → `frontend: npm run build && npm run typecheck && npm run lint && npm run test` → `docker compose -p sinopcepte up --build -d` → `node scripts/smoke.mjs --n7` → `node scripts/screenshot.mjs http://localhost:3100/ docs/n6`.
