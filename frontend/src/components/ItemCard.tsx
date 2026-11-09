@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { displayRating, itemPrimaryAction } from "@/lib/feed";
 import type { AuthUser, Item } from "@/lib/types";
-import { getCheckInState, getMyActiveCheckIn, type VenueCheckInState } from "@/lib/checkin";
+import { getCheckInState, getMyActiveCheckIn, type MyActiveCheckIn, type VenueCheckInState } from "@/lib/checkin";
 import { CheckInModal } from "./CheckInModal";
 
 export function ItemCard({
@@ -18,9 +18,10 @@ export function ItemCard({
   const isMekan = item.category === "mekan";
   const primary = itemPrimaryAction(item);
 
+  const [mounted, setMounted] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [checkInState, setCheckInState] = useState<Record<string, VenueCheckInState>>({});
-  const [myCheckIn, setMyCheckIn] = useState(() => getMyActiveCheckIn());
+  const [myCheckIn, setMyCheckIn] = useState<MyActiveCheckIn | null>(null);
 
   const refreshState = () => {
     setCheckInState(getCheckInState());
@@ -28,6 +29,7 @@ export function ItemCard({
   };
 
   useEffect(() => {
+    setMounted(true);
     refreshState();
   }, []);
 
@@ -36,7 +38,9 @@ export function ItemCard({
   const mayor = venueData?.mayor;
 
   const currentHandle = (currentUser?.handle || currentUser?.username || "").toLowerCase();
+  // Hydration mismatch önleme: SSR sırasında ve ilk renderda mounted=false iken sunucuyla aynı (Check-in) render edilir
   const isCheckedInHere =
+    mounted &&
     myCheckIn?.venueId === item.id &&
     (!currentHandle || (myCheckIn?.handle || "").toLowerCase() === currentHandle);
 

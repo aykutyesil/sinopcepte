@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   CATEGORY_INFO,
@@ -8,17 +8,26 @@ import {
   getMyRequestId,
   type Lobby,
 } from "@/lib/okeye4";
+import type { AuthUser } from "@/lib/types";
 
 export function LobbyCard({
   lobby,
+  currentUser,
   onApply,
   onManage,
 }: {
   lobby: Lobby;
+  currentUser?: AuthUser | null;
   onApply: (lobby: Lobby) => void;
   onManage: (lobby: Lobby) => void;
 }) {
-  const [asHost, setAsHost] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [asGuestView, setAsGuestView] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const cat = CATEGORY_INFO[lobby.category];
 
   const timeInfo = useMemo(
@@ -26,10 +35,21 @@ export function LobbyCard({
     [lobby.createdAt, lobby.expiresInMinutes]
   );
 
-  const myReqId = getMyRequestId(lobby.id);
-  const myReq = lobby.requests.find((r) => r.id === myReqId);
+  const myReqId = mounted ? getMyRequestId(lobby.id) : null;
+  const myReq = myReqId ? lobby.requests.find((r) => r.id === myReqId) : null;
 
   const pendingCount = lobby.requests.filter((r) => r.status === "pending").length;
+
+  // Mevcut kullanıcının masa sahibi olup olmadığını kontrol et
+  const localSavedHandle = mounted && typeof window !== "undefined" ? localStorage.getItem("sinopcepte_my_handle") || "" : "";
+  const currentHandle = (currentUser?.handle || currentUser?.username || localSavedHandle)
+    .toLowerCase()
+    .replace(/^@/, "");
+
+  const hostHandle = (lobby.host.handle || "").toLowerCase().replace(/^@/, "");
+  const isActualHost = Boolean(currentHandle && currentHandle === hostHandle);
+  // Kullanıcı ilan sahibi ise ve misafir moduna özellikle geçmediyse host sayılır
+  const isHost = isActualHost && !asGuestView;
 
   // Masa sandalyeleri dizisi
   const seats = useMemo(() => {
@@ -96,6 +116,11 @@ export function LobbyCard({
             </span>
           </Link>
           <span className="text-[10px] text-amber-400 font-mono">👑 Masa Sahibi</span>
+          {isActualHost && (
+            <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+              Senin İlanın
+            </span>
+          )}
           {lobby.locationDetails && (
             <span className="text-[10px] text-slate-400 truncate ml-auto">
               ({lobby.locationDetails})
@@ -165,7 +190,25 @@ export function LobbyCard({
 
       {/* Kullanıcı Katılım / Durum Alanı */}
       <div className="mt-3.5 pt-3 border-t border-slate-800/80">
-        {myReq && myReq.status === "accepted" ? (
+        {/* İlanı açan kişi: ASLA "Gelebilir miyim?" butonunu görmez, doğrudan Masayı Yönet butonu çıkar */}
+        {isHost ? (
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => onManage(lobby)}
+              className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-rose-600 hover:opacity-95 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-rose-950/30"
+            >
+              <span>👑 Masayı Yönet</span>
+              {pendingCount > 0 ? (
+                <span className="px-2 py-0.5 rounded-full bg-white text-rose-600 text-[10px] font-black animate-pulse">
+                  {pendingCount} Yeni İstek
+                </span>
+              ) : (
+                <span className="text-[10px] font-mono opacity-80">(Masa Sahibi Sensin)</span>
+              )}
+            </button>
+          </div>
+        ) : myReq && myReq.status === "accepted" ? (
           <div className="p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 flex flex-col sm:flex-row items-center justify-between gap-2.5">
             <div className="flex items-center gap-2">
               <span className="text-xl">🎉</span>
@@ -208,21 +251,6 @@ export function LobbyCard({
               <span>Katılım talebin masa sahibine iletildi, onay bekleniyor...</span>
             </div>
           </div>
-        ) : asHost ? (
-          <div className="flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => onManage(lobby)}
-              className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:opacity-95 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-lg"
-            >
-              <span>👑 Masayı Yönet</span>
-              {pendingCount > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-white text-rose-600 text-[10px] font-black">
-                  {pendingCount} İstek
-                </span>
-              )}
-            </button>
-          </div>
         ) : lobby.status === "open" ? (
           <div className="flex items-center gap-2">
             <button
@@ -233,17 +261,6 @@ export function LobbyCard({
               <span>🙋‍♂️ Gelebilir miyim?</span>
               <span className="text-[10px] font-mono opacity-80">(Katılım İsteği Gönder)</span>
             </button>
-            <button
-              type="button"
-              onClick={() => onManage(lobby)}
-              className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition flex items-center gap-1"
-              title="Masa Sahibi Gözüyle İncele / Yönet"
-            >
-              <span>👑 Yönet</span>
-              {pendingCount > 0 && (
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
-              )}
-            </button>
           </div>
         ) : (
           <div className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 text-center text-xs text-slate-400">
@@ -251,16 +268,18 @@ export function LobbyCard({
           </div>
         )}
 
-        {/* Demo Modu Değiştirici */}
-        <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500">
-          <span>İlan ID: #{lobby.id.slice(-4)}</span>
-          <button
-            type="button"
-            onClick={() => setAsHost((prev) => !prev)}
-            className="hover:text-cyan-400 transition underline underline-offset-2"
-          >
-            {asHost ? "👁️ Katılımcı Gözüyle Gör" : "⚙️ Masa Sahibi Rolüne Geç"}
-          </button>
+        {/* Alt bilgi şeridi */}
+        <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono mt-2.5">
+          <span>İlan #{lobby.id.slice(-4)}</span>
+          {isActualHost && (
+            <button
+              type="button"
+              onClick={() => setAsGuestView((prev) => !prev)}
+              className="hover:text-amber-300 transition underline underline-offset-2 text-slate-400"
+            >
+              {asGuestView ? "👑 Yönetici Görünümüne Dön" : "👀 Misafir Gözüyle Önizle"}
+            </button>
+          )}
         </div>
       </div>
     </article>

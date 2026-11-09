@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import {
@@ -151,6 +151,7 @@ export function Okeye4Feed({ me }: { me?: AuthUser | null }) {
             <LobbyCard
               key={lobby.id}
               lobby={lobby}
+              currentUser={me}
               onApply={(l) => setSelectedApplyLobby(l)}
               onManage={(l) => setSelectedManageLobby(l)}
             />
