@@ -13,6 +13,8 @@ import { RightRail } from "./rail/RightRail";
 import { AdminFloatingBar } from "./admin/AdminFloatingBar";
 import { AdminLoginModal } from "./admin/AdminLoginModal";
 import { AdminPanelModal } from "./admin/AdminPanelModal";
+import { Okeye4Feed } from "./okeye4/Okeye4Feed";
+import { Okeye4Widget } from "./okeye4/Okeye4Widget";
 
 /** `data === null` → sunucu verisi henüz gelmedi (Suspense yedeği / iskelet). */
 export function Portal({ data }: { data: PortalData | null }) {
@@ -85,7 +87,20 @@ export function Portal({ data }: { data: PortalData | null }) {
             pharmacy={data?.pharmacy ?? null}
             pharmacyState={loading ? "loading" : data.pharmacy ? "ok" : data.pharmacyError ? "error" : "none"}
           />
-          <FeedStream feed={feed} loading={loading} backendError={backendError} />
+
+          {filter === "okeye4" ? (
+            <Okeye4Feed />
+          ) : (
+            <>
+              {filter === "all" && !query && (
+                <Okeye4Widget
+                  onViewAll={() => handleFilter("okeye4")}
+                  onOpenCreate={() => handleFilter("okeye4")}
+                />
+              )}
+              <FeedStream feed={feed} loading={loading} backendError={backendError} />
+            </>
+          )}
         </main>
 
         <RightRail

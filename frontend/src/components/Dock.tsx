@@ -8,8 +8,9 @@ import { useThemePreference } from "@/hooks/useThemePreference";
 
 // Legacy sol dock (index.html:76-139).
 
-const NAV: { filter: FeedFilter; icon: string; label: string }[] = [
+const NAV: { filter: FeedFilter; icon: string; label: string; badge?: string }[] = [
   { filter: "all", icon: "⚡", label: "Canlı Akış (Tümü)" },
+  { filter: "okeye4", icon: "🀄", label: "Okeye 4. Aranıyor", badge: "CANLI" },
   { filter: "etkinlik", icon: "⚽", label: "Maç & Canlı Sahne" },
   { filter: "mekan", icon: "🍸", label: "Mekan & Kafe" },
   { filter: "taksi", icon: "🚖", label: "7/24 Taksi" },
@@ -77,7 +78,12 @@ export function Dock({
               aria-pressed={filter === n.filter}
             >
               <span className="text-base shrink-0">{n.icon}</span>
-              <span className="hidden md:inline">{n.label}</span>
+              <span className="hidden md:inline truncate">{n.label}</span>
+              {n.badge && (
+                <span className="hidden md:inline text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950 ml-auto shrink-0 shadow-xs">
+                  {n.badge}
+                </span>
+              )}
             </button>
           ))}
         </nav>

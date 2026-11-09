@@ -2,11 +2,12 @@
 
 export type ItemCategory = "mekan" | "tekel" | "taksi" | "eczane" | "cicek";
 
-/** Sol menüdeki filtreler: `all` + `etkinlik` + item kategorileri. */
-export type FeedFilter = "all" | "etkinlik" | ItemCategory;
+/** Sol menüdeki filtreler: `all` + `okeye4` + `etkinlik` + item kategorileri. */
+export type FeedFilter = "all" | "okeye4" | "etkinlik" | ItemCategory;
 
 export const FEED_FILTERS: readonly FeedFilter[] = [
   "all",
+  "okeye4",
   "etkinlik",
   "mekan",
   "taksi",
