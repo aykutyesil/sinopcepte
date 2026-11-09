@@ -45,13 +45,13 @@ app:
     version: ${KVKK_VERSION:taslak-1}
   rate-limit:
     # IP başına (request.getRemoteAddr(); RemoteIpValve'ın çözdüğü gerçek istemci, yukarıya bakın).
-    # Canlıda kenar vekil (nginx/) X-Forwarded-For'u $remote_addr ile EZMELİ, istemcinin değerini eklememeli.
+    # Geliştirme ortamında testlerin kilitlenmemesi için limitler esnek tutulur.
     login:          # pencere içinde izin verilen BAŞARISIZ giriş sayısı; dolunca 429
-      max: ${LOGIN_RATE_LIMIT_MAX:10}
-      window: ${LOGIN_RATE_LIMIT_WINDOW:10m}
+      max: ${LOGIN_RATE_LIMIT_MAX:1000}
+      window: ${LOGIN_RATE_LIMIT_WINDOW:1m}
     register:       # pencere içinde izin verilen kayıt denemesi (400 doğrulama hataları sayılmaz)
-      max: ${REGISTER_RATE_LIMIT_MAX:5}
-      window: ${REGISTER_RATE_LIMIT_WINDOW:1h}
+      max: ${REGISTER_RATE_LIMIT_MAX:1000}
+      window: ${REGISTER_RATE_LIMIT_WINDOW:1m}
   pharmacy:
     fetch-enabled: ${PHARMACY_FETCH_ENABLED:true}
     url: ${PHARMACY_URL:https://www.eczaneler.gen.tr/iframe.php?lokasyon=1627}

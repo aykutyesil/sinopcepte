@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useLayoutEffect, useState } from "react";
 import Link from "next/link";
@@ -91,7 +91,7 @@ export function ProfileEditor() {
         onSessionLost={onSessionLost}
       />
       <PasswordSection onSessionLost={onSessionLost} />
-      <DeleteSection admin={admin} onDeleted={() => router.replace("/")} onSessionLost={onSessionLost} />
+      <DeleteSection admin={admin} onDeleted={() => { window.location.href = "/"; }} onSessionLost={onSessionLost} />
     </div>
   );
 }
@@ -108,7 +108,7 @@ function ProfileHeader({ profile, admin }: { profile: OwnProfile; admin: boolean
     } catch {
       // Oturum zaten düşmüş olabilir; yine de çıkış durumuna geç.
     }
-    router.replace("/");
+    window.location.href = "/";
   };
 
   return (

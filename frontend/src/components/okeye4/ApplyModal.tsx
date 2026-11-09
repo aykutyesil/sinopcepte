@@ -1,9 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { applyToLobby, CATEGORY_INFO, type Lobby } from "@/lib/okeye4";
 import { fetchMe } from "@/lib/client-api";
 import type { AuthUser } from "@/lib/types";
+import { avatarEmoji } from "@/lib/avatars";
 
 const AVATAR_OPTIONS = ["😎", "👨‍🦱", "👩‍🦰", "🧔", "👩‍🎓", "🎸", "☕", "🎲", "🔥"];
 
@@ -34,11 +35,11 @@ export function ApplyModal({
 
     const fillUser = (u: AuthUser) => {
       setLoggedInUser(u);
-      const h = u.handle || u.username || "";
+      const h = (u.handle || u.username || "").replace(/^@/, "");
       setHandle(h);
       setName(h);
-      if (u.avatar && AVATAR_OPTIONS.includes(u.avatar)) {
-        setAvatar(u.avatar);
+      if (u.avatar) {
+        setAvatar(avatarEmoji(u.avatar));
       }
     };
 

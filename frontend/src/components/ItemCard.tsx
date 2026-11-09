@@ -1,12 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { displayRating, itemPrimaryAction } from "@/lib/feed";
-import type { Item } from "@/lib/types";
+import type { AuthUser, Item } from "@/lib/types";
 import { getCheckInState, getMyActiveCheckIn, type VenueCheckInState } from "@/lib/checkin";
 import { CheckInModal } from "./CheckInModal";
 
-export function ItemCard({ item }: { item: Item }) {
+export function ItemCard({
+  item,
+  currentUser,
+}: {
+  item: Item;
+  currentUser?: AuthUser | null;
+}) {
   const isEczane = item.category === "eczane";
   const isMekan = item.category === "mekan";
   const primary = itemPrimaryAction(item);
@@ -27,7 +34,11 @@ export function ItemCard({ item }: { item: Item }) {
   const venueData = checkInState[item.id];
   const activeUsers = venueData?.activeUsers ?? [];
   const mayor = venueData?.mayor;
-  const isCheckedInHere = myCheckIn?.venueId === item.id;
+
+  const currentHandle = (currentUser?.handle || currentUser?.username || "").toLowerCase();
+  const isCheckedInHere =
+    myCheckIn?.venueId === item.id &&
+    (!currentHandle || (myCheckIn?.handle || "").toLowerCase() === currentHandle);
 
   return (
     <>
@@ -63,13 +74,15 @@ export function ItemCard({ item }: { item: Item }) {
                 {activeUsers.length > 0 && (
                   <div className="flex -space-x-2 shrink-0">
                     {activeUsers.slice(0, 3).map((u) => (
-                      <span
+                      <Link
                         key={u.id}
-                        className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 border border-cyan-500/50 text-xs shadow"
-                        title={`@${u.handle}`}
+                        href={`/u/${u.handle}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 border border-cyan-500/50 hover:border-cyan-300 text-xs shadow hover:scale-110 transition z-10"
+                        title={`@${u.handle} profilini görüntüle`}
                       >
                         {u.avatar}
-                      </span>
+                      </Link>
                     ))}
                   </div>
                 )}
@@ -80,9 +93,14 @@ export function ItemCard({ item }: { item: Item }) {
                       {activeUsers.length} kişi burada
                     </span>
                     {mayor && (
-                      <span className="text-[10px] text-amber-300/90 font-mono truncate hidden xs:inline">
+                      <Link
+                        href={`/u/${mayor.handle}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-[10px] text-amber-300/90 hover:text-amber-200 hover:underline font-mono truncate hidden xs:inline"
+                        title={`@${mayor.handle} profilini görüntüle`}
+                      >
                         • 👑 @{mayor.handle}
-                      </span>
+                      </Link>
                     )}
                   </div>
                 </div>
@@ -96,7 +114,7 @@ export function ItemCard({ item }: { item: Item }) {
                     : "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 group-hover/swarm:bg-cyan-500 group-hover/swarm:text-slate-950"
                 }`}
               >
-                <span>{isCheckedInHere ? "✅ Buradasın" : "📍 Check-in"}</span>
+                <span>{isCheckedInHere ? `✅ Buradasın (@${myCheckIn?.handle})` : "📍 Check-in"}</span>
               </button>
             </div>
           )}
@@ -128,6 +146,7 @@ export function ItemCard({ item }: { item: Item }) {
       {modalOpen && (
         <CheckInModal
           item={item}
+          currentUser={currentUser}
           onClose={() => setModalOpen(false)}
           onUpdate={() => refreshState()}
         />

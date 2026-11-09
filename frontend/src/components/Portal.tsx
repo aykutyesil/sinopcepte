@@ -16,16 +16,16 @@ import { AdminPanelModal } from "./admin/AdminPanelModal";
 import { Okeye4Feed } from "./okeye4/Okeye4Feed";
 import { Okeye4Widget } from "./okeye4/Okeye4Widget";
 
-/** `data === null` → sunucu verisi henüz gelmedi (Suspense yedeği / iskelet). */
+// Legacy portal.html SPA düzeni: sol dock (20-30), orta akış (32-230), sağ ray (231-314).
+// SSR'dan `data` dolu gelir (yükleniyor durumu yok); yalnız istemci yenilemelerinde `null` olabilir.
+
 export function Portal({ data }: { data: PortalData | null }) {
   const router = useRouter();
   const weather = useWeather();
 
   const [filter, setFilter] = useState<FeedFilter>("all");
   const [query, setQuery] = useState("");
-  /** `undefined` = henüz bilinmiyor, `null` = oturum yok. */
   const [me, setMe] = useState<AuthUser | null | undefined>(undefined);
-  const isAdmin = hasAdminRole(me ?? null);
   const [loginOpen, setLoginOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
 
@@ -37,18 +37,27 @@ export function Portal({ data }: { data: PortalData | null }) {
 
   const feed = useMemo(() => buildFeed({ events, items, filter, query }), [events, items, filter, query]);
 
-  // Oturum çerezi varsa kullanıcıyı backend'den al (legacy: sessionStorage bayrağı). Sayfa
-  // <Activity> ile gizlenip geri geldiğinde efekt yeniden çalışır → giriş/çıkış/profil değişikliği yansır.
+  // Oturum durumunu backend'den al. Sekme odağı ve görünürlük değişiminde tazele
   useEffect(() => {
-    if (loading) return;
     let alive = true;
-    fetchMe().then((u) => {
-      if (alive) setMe(u);
-    });
+    const loadUser = () => {
+      fetchMe().then((u) => {
+        if (alive) setMe(u);
+      }).catch(() => {
+        if (alive) setMe(null);
+      });
+    };
+    loadUser();
+
+    const onFocus = () => loadUser();
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("visibilitychange", onFocus);
     return () => {
       alive = false;
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("visibilitychange", onFocus);
     };
-  }, [loading]);
+  }, []);
 
   const handleFilter = (f: FeedFilter) => {
     // Legacy filtre tıklaması arama sonucunu bırakıp filtre görünümünü çizer ama kutudaki
@@ -72,7 +81,10 @@ export function Portal({ data }: { data: PortalData | null }) {
     setMe(null);
     setPanelOpen(false);
     alert("Yönetici çıkışı yapıldı.");
+    window.location.href = "/";
   };
+
+  const isAdmin = hasAdminRole(me ?? null);
 
   return (
     <>
@@ -98,7 +110,7 @@ export function Portal({ data }: { data: PortalData | null }) {
                   onOpenCreate={() => handleFilter("okeye4")}
                 />
               )}
-              <FeedStream feed={feed} loading={loading} backendError={backendError} />
+              <FeedStream feed={feed} loading={loading} backendError={backendError} currentUser={me} />
             </>
           )}
         </main>

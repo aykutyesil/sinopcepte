@@ -1,4 +1,4 @@
-// SinopCepte Swarm Mantığıyla Check-In Sistemi
+﻿// SinopCepte Swarm Mantığıyla Check-In Sistemi
 
 export interface CheckInUser {
   id: string;
@@ -95,6 +95,8 @@ const MY_CHECKIN_KEY = "sinopcepte_my_active_checkin";
 export interface MyActiveCheckIn {
   venueId: string;
   venueTitle: string;
+  venueName?: string;
+  handle?: string;
   note?: string;
   timestamp: number;
 }

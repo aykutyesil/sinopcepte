@@ -1,8 +1,9 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { avatarEmoji } from "@/lib/avatars";
 import type { AuthUser, FeedFilter } from "@/lib/types";
+import { logout } from "@/lib/client-api";
 import { useSecretClick } from "@/hooks/useSecretClick";
 import { useThemePreference } from "@/hooks/useThemePreference";
 
@@ -19,11 +20,9 @@ const NAV: { filter: FeedFilter; icon: string; label: string; badge?: string }[]
   { filter: "cicek", icon: "💐", label: "Çiçek & Hediye" },
 ];
 
-// İlk HTML'deki (94 ve 99. satır) sınıflar. Legacy `filterFeed` tıklamadan sonra duyarlı
-// sınıfları düşüren farklı bir dize yazıyordu (hata); burada her durumda işaretlemedeki dize kullanılır.
 const ACTIVE =
   "w-full p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-rose-600 text-white font-bold text-xs flex items-center justify-center md:justify-start gap-3 transition";
-// Alt araç düğmeleri (tema + hesap) aynı dizeyi paylaşır.
+
 const TOOL =
   "w-full min-w-0 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center md:justify-start gap-2 transition";
 
@@ -105,7 +104,6 @@ function AccountButton({ me }: { me: AuthUser | null | undefined }) {
   const handle = me ? me.handle || me.username : "";
   if (me === undefined || (me && !handle)) {
     // Oturum bilinmeden "Giriş Yap" gösterilirse girişli kullanıcıda yanıp söner.
-    // (Admin modal girişinden hemen sonra `Me` yeniden okunurken de rumuz boştur.)
     return (
       <div className={`${TOOL} pointer-events-none`} aria-hidden="true" data-testid="account-placeholder">
         <span className="w-4 h-4 rounded-full bg-slate-800 animate-pulse shrink-0" />
@@ -121,10 +119,43 @@ function AccountButton({ me }: { me: AuthUser | null | undefined }) {
       </Link>
     );
   }
+
+  const handleSwitchUser = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await logout();
+      localStorage.removeItem("sinopcepte_my_handle");
+      localStorage.removeItem("sinopcepte_my_checkin");
+    } catch {}
+    window.location.href = "/giris";
+  };
+
   return (
-    <Link href="/profil" className={TOOL} title={`@${handle} — Profilim`} data-testid="account-profile">
-      <span className="shrink-0 text-base leading-none">{avatarEmoji(me.avatar)}</span>
-      <span className="hidden md:inline truncate min-w-0">@{handle}</span>
-    </Link>
+    <div className="space-y-1.5">
+      <Link href={`/u/${handle}`} className={TOOL} title={`@${handle} — Profilimi Görüntüle`} data-testid="account-profile">
+        <span className="shrink-0 text-base leading-none">{avatarEmoji(me.avatar)}</span>
+        <span className="hidden md:inline truncate min-w-0 font-bold">@{handle}</span>
+      </Link>
+      <div className="flex items-center gap-1">
+        <Link
+          href="/profil"
+          className="flex-1 min-w-0 p-1.5 rounded-xl bg-[#0b0e1e] hover:bg-slate-800 text-slate-300 hover:text-white text-[10px] font-bold flex items-center justify-center gap-1 transition border border-slate-800/80"
+          title="Profil Ayarlarını Düzenle"
+        >
+          <span>⚙️</span>
+          <span className="hidden md:inline truncate">Ayarlar</span>
+        </Link>
+        <button
+          type="button"
+          onClick={handleSwitchUser}
+          className="p-1.5 rounded-xl bg-[#0b0e1e] hover:bg-rose-950/40 text-slate-400 hover:text-rose-300 text-[10px] font-bold flex items-center justify-center gap-1 transition border border-slate-800/80"
+          title="Oturumu Kapat ve Farklı Kullanıcıya Geç"
+        >
+          <span>🚪</span>
+          <span className="hidden md:inline">Değiştir</span>
+        </button>
+      </div>
+    </div>
   );
 }

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import {
@@ -9,6 +9,7 @@ import {
 } from "@/lib/okeye4";
 import { fetchMe } from "@/lib/client-api";
 import type { AuthUser } from "@/lib/types";
+import { avatarEmoji } from "@/lib/avatars";
 
 const PRESET_VENUES = [
   "Mathiday's Social Club",
@@ -19,7 +20,7 @@ const PRESET_VENUES = [
   "SNÜ Kampüs Kafeterya",
 ];
 
-const AVATAR_OPTIONS = ["👨‍🦱", "👩‍🦰", "🧔", "👩‍🎓", "🎸", "🎧", "😎", "☕", "🎲"];
+const AVATAR_OPTIONS = ["🕊️", "🐟", "🗼", "🏰", "🌊", "😎", "👑", "🎧", "🎸", "☕", "🎲", "👨‍🦱", "👩‍🦰", "🧔"];
 
 export function CreateLobbyModal({
   isOpen,
@@ -55,11 +56,11 @@ export function CreateLobbyModal({
 
     const fillUser = (u: AuthUser) => {
       setLoggedInUser(u);
-      const h = u.handle || u.username || "";
+      const h = (u.handle || u.username || "").replace(/^@/, "");
       setHostHandle(h);
       setHostName(h);
-      if (u.avatar && AVATAR_OPTIONS.includes(u.avatar)) {
-        setHostAvatar(u.avatar);
+      if (u.avatar) {
+        setHostAvatar(avatarEmoji(u.avatar));
       }
     };
 

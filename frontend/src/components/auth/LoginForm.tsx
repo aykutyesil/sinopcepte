@@ -2,14 +2,13 @@
 
 import { useLayoutEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { toFormErrors } from "@/lib/api-errors";
 import { ApiError, login } from "@/lib/client-api";
 import { safeNext } from "@/lib/validation";
 import { CARD, FormError, INPUT, Label, PRIMARY_BTN } from "./ui";
 
 export function LoginForm() {
-  const router = useRouter();
   const params = useSearchParams();
   const rawNext = params.get("next");
   const next = safeNext(rawNext);
@@ -40,7 +39,8 @@ export function LoginForm() {
     setError(null);
     try {
       await login(u, password);
-      router.replace(next);
+      // Farklı kullanıcı geçişinde React state'i ve çerezleri tam yenilemek için tam sayfa yönlendirmesi
+      window.location.href = next;
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 401 || err.status === 400) setError("Rumuz/e-posta veya şifre hatalı.");

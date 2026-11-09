@@ -1,4 +1,5 @@
 import type { FeedResult } from "@/lib/feed";
+import type { AuthUser } from "@/lib/types";
 import { EventCard } from "./EventCard";
 import { ItemCard } from "./ItemCard";
 
@@ -8,10 +9,12 @@ export function FeedStream({
   feed,
   loading,
   backendError,
+  currentUser,
 }: {
   feed: FeedResult;
   loading: boolean;
   backendError: boolean;
+  currentUser?: AuthUser | null;
 }) {
   const empty = feed.events.length === 0 && feed.items.length === 0;
 
@@ -35,7 +38,7 @@ export function FeedStream({
             <EventCard key={ev.id} ev={ev} />
           ))}
           {feed.items.map((item) => (
-            <ItemCard key={item.id} item={item} />
+            <ItemCard key={item.id} item={item} currentUser={currentUser} />
           ))}
           {empty && !backendError && (
             <div className="p-12 text-center text-slate-500 text-xs">Aradığınız kriterde bir akış bulunamadı.</div>

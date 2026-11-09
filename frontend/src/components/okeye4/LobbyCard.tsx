@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -33,9 +33,13 @@ export function LobbyCard({
 
   // Masa sandalyeleri dizisi
   const seats = useMemo(() => {
-    const list: { type: "host" | "filled" | "empty"; label: string; avatar?: string }[] = [];
-    list.push({ type: "host", label: "Masa Sahibi", avatar: lobby.host.avatar });
-    for (let i = 1; i < lobby.currentCount; i++) {
+    const list: { type: "host" | "filled" | "empty"; label: string; avatar?: string; handle?: string }[] = [];
+    list.push({ type: "host", label: `@${lobby.host.handle} (Masa Sahibi)`, avatar: lobby.host.avatar, handle: lobby.host.handle });
+    const approved = lobby.requests.filter((r) => r.status === "accepted");
+    approved.forEach((r) => {
+      list.push({ type: "filled", label: `@${r.user.handle} (Katılımcı)`, avatar: r.user.avatar, handle: r.user.handle });
+    });
+    while (list.length < lobby.currentCount) {
       list.push({ type: "filled", label: "Katılımcı", avatar: "👤" });
     }
     for (let i = 0; i < lobby.neededCount; i++) {
@@ -110,21 +114,34 @@ export function LobbyCard({
             Masa:
           </span>
           <div className="flex items-center -space-x-1 sm:space-x-1">
-            {seats.map((s, idx) => (
-              <div
-                key={idx}
-                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs transition border ${
-                  s.type === "host"
-                    ? "bg-amber-500/20 border-amber-500/60 text-amber-300 ring-2 ring-amber-500/20"
-                    : s.type === "filled"
-                    ? "bg-slate-800 border-slate-700 text-slate-300"
-                    : "border-dashed border-rose-500/60 bg-rose-500/10 text-rose-400 animate-pulse font-bold"
-                }`}
-                title={s.label}
-              >
-                {s.type === "empty" ? "?" : s.avatar || "👤"}
-              </div>
-            ))}
+            {seats.map((s, idx) =>
+              s.handle ? (
+                <Link
+                  key={idx}
+                  href={`/u/${s.handle}`}
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs transition border hover:scale-110 ${
+                    s.type === "host"
+                      ? "bg-amber-500/20 border-amber-500/60 text-amber-300 ring-2 ring-amber-500/20 hover:border-amber-400"
+                      : "bg-slate-800 border-slate-700 text-slate-300 hover:border-cyan-400"
+                  }`}
+                  title={`${s.label} — Profili gör`}
+                >
+                  {s.avatar || "👤"}
+                </Link>
+              ) : (
+                <div
+                  key={idx}
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs transition border ${
+                    s.type === "empty"
+                      ? "border-dashed border-rose-500/60 bg-rose-500/10 text-rose-400 animate-pulse font-bold"
+                      : "bg-slate-800 border-slate-700 text-slate-300"
+                  }`}
+                  title={s.label}
+                >
+                  {s.type === "empty" ? "?" : s.avatar || "👤"}
+                </div>
+              )
+            )}
           </div>
           <span className="text-[11px] font-mono text-slate-400 ml-1">
             ({lobby.currentCount}/{lobby.totalCount})

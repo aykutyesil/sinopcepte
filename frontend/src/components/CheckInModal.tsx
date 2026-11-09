@@ -1,9 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Item, AuthUser } from "@/lib/types";
 import { fetchMe } from "@/lib/client-api";
+import { avatarEmoji } from "@/lib/avatars";
 import {
   formatTimeAgo,
   getCheckInState,
@@ -15,20 +16,36 @@ import {
   type CheckInUser,
 } from "@/lib/checkin";
 
-const AVATAR_OPTIONS = ["👑", "😎", "🌊", "☕", "🍔", "🎧", "⚡", "✨", "🎸", "🍕", "🍺", "🎲"];
+const AVATAR_OPTIONS = [
+  "🕊️", "🐟", "🗼", "🏰", "🌊", "😎", "👑", "🎧", "⚡", "✨", "🎸", "🍕", "🍺", "☕", "🍔", "🎲"
+];
 
 export function CheckInModal({
   item,
+  currentUser,
   onClose,
   onUpdate,
 }: {
   item: Item;
+  currentUser?: AuthUser | null;
   onClose: () => void;
   onUpdate: () => void;
 }) {
   const [allStates, setAllStates] = useState(getCheckInState);
   const myCheckIn = getMyActiveCheckIn();
-  const isCheckedInHere = myCheckIn?.venueId === item.id;
+
+  const [handle, setHandle] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [avatar, setAvatar] = useState("😎");
+  const [note, setNote] = useState("");
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [loggedInUser, setLoggedInUser] = useState<AuthUser | null>(currentUser ?? null);
+  const [successMsg, setSuccessMsg] = useState("");
+
+  const currentHandle = (loggedInUser?.handle || loggedInUser?.username || "").toLowerCase();
+  const isCheckedInHere =
+    myCheckIn?.venueId === item.id &&
+    (!currentHandle || (myCheckIn?.handle || "").toLowerCase() === currentHandle);
 
   const venueData: VenueCheckInState = allStates[item.id] || {
     venueId: item.id,
@@ -42,34 +59,36 @@ export function CheckInModal({
     activeUsers: [],
   };
 
-  const [handle, setHandle] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [avatar, setAvatar] = useState("😎");
-  const [note, setNote] = useState("");
-  const [isAnonymous, setIsAnonymous] = useState(false);
-  const [loggedInUser, setLoggedInUser] = useState<AuthUser | null>(null);
-  const [successMsg, setSuccessMsg] = useState("");
-
   // Oturum açan kullanıcının bilgilerini otomatik doldur
   useEffect(() => {
-    fetchMe().then((me) => {
-      if (me && (me.handle || me.username)) {
-        setLoggedInUser(me);
-        const userHandle = (me.handle || me.username).replace(/^@/, "");
+    const applyUser = (me: AuthUser) => {
+      setLoggedInUser(me);
+      const userHandle = (me.handle || me.username || "").replace(/^@/, "");
+      if (userHandle) {
         setHandle(userHandle);
         setDisplayName(userHandle);
-        if (me.avatar && AVATAR_OPTIONS.includes(me.avatar)) {
-          setAvatar(me.avatar);
-        }
-      } else {
-        const savedHandle = localStorage.getItem("sinopcepte_my_handle");
-        if (savedHandle) {
-          setHandle(savedHandle);
-          setDisplayName(savedHandle);
-        }
       }
-    });
-  }, []);
+      if (me.avatar) {
+        setAvatar(avatarEmoji(me.avatar));
+      }
+    };
+
+    if (currentUser && (currentUser.handle || currentUser.username)) {
+      applyUser(currentUser);
+    } else {
+      fetchMe().then((me) => {
+        if (me && (me.handle || me.username)) {
+          applyUser(me);
+        } else {
+          const savedHandle = localStorage.getItem("sinopcepte_my_handle");
+          if (savedHandle) {
+            setHandle(savedHandle);
+            setDisplayName(savedHandle);
+          }
+        }
+      });
+    }
+  }, [currentUser]);
 
   const handleCheckIn = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,11 +96,11 @@ export function CheckInModal({
     const rawHandle = handle.trim().replace(/^@/, "");
     const finalHandle = isAnonymous
       ? "gizli_marti_" + Math.floor(100 + Math.random() * 900)
-      : rawHandle || (loggedInUser?.handle || loggedInUser?.username) || "sinoplu_" + Math.floor(1000 + Math.random() * 9000);
+      : rawHandle || (loggedInUser?.handle || loggedInUser?.username || "").replace(/^@/, "") || "sinoplu_" + Math.floor(1000 + Math.random() * 9000);
 
     const finalName = isAnonymous
       ? "Gizli Sinoplu 🤫"
-      : displayName.trim() || rawHandle || (loggedInUser?.handle || loggedInUser?.username) || "Sinoplu";
+      : displayName.trim() || rawHandle || (loggedInUser?.handle || loggedInUser?.username || "").replace(/^@/, "") || "Sinoplu";
 
     if (!isAnonymous && rawHandle) {
       try {
@@ -133,21 +152,29 @@ export function CheckInModal({
     saveCheckInState(nextAll);
     setAllStates(nextAll);
 
+    // Kendi aktif mekanımı kaydet
     setMyActiveCheckIn({
       venueId: item.id,
       venueTitle: item.title,
-      note: note.trim() || undefined,
+      venueName: item.title,
+      handle: finalHandle,
       timestamp: Date.now(),
     });
 
-    setSuccessMsg("🎉 Harika! " + item.title + " mekanına @" + finalHandle + " olarak check-in yaptın.");
+    setSuccessMsg(`🎉 @${finalHandle} olarak check-in yapıldı!`);
     onUpdate();
+
+    setTimeout(() => {
+      setSuccessMsg("");
+    }, 4000);
   };
 
   const handleCheckOut = () => {
-    const updatedUsers = venueData.activeUsers.filter(
-      (u) => u.handle !== myCheckIn?.venueTitle && u.timestamp !== myCheckIn?.timestamp
-    );
+    clearMyActiveCheckIn();
+
+    // Aktif kullanıcılardan kendimi çıkar
+    const userH = myCheckIn?.handle || (loggedInUser?.handle || loggedInUser?.username || "").replace(/^@/, "");
+    const updatedUsers = venueData.activeUsers.filter((u) => u.handle !== userH);
 
     const nextAll = {
       ...allStates,
@@ -159,84 +186,84 @@ export function CheckInModal({
 
     saveCheckInState(nextAll);
     setAllStates(nextAll);
-    clearMyActiveCheckIn();
-    setSuccessMsg("👋 Mekandan çıkış yapıldı.");
     onUpdate();
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-[#0f1428] border border-cyan-500/40 rounded-3xl max-w-lg w-full p-4 sm:p-6 shadow-2xl relative space-y-4 my-auto">
-        {/* Kapat Butonu */}
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-[#0b0e1e] border border-cyan-500/30 rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+        {/* Kapat butonu */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition"
+          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition"
         >
           ✕
         </button>
 
-        {/* Mekan Başlığı */}
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-              📍 SWARM CHECK-IN
-            </span>
-            <span className="text-xs text-slate-400">{item.location}</span>
+        {/* Başlık ve Mekan Bilgisi */}
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xl">📍</span>
+            <h3 className="text-lg font-black text-white font-display truncate">{item.title}</h3>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-white mt-1">{item.title}</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Şu an mekanda kimler var ve mekanın lideri kim?</p>
+          <p className="text-xs text-slate-400">{item.location}</p>
         </div>
 
         {/* Başarı Bildirimi */}
         {successMsg && (
-          <div className="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold animate-pulse">
-            {successMsg}
+          <div className="mb-4 p-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-2 animate-bounce">
+            <span>✨</span>
+            <span>{successMsg}</span>
           </div>
         )}
 
-        {/* 👑 MEKANIN MAYOR'I (MÜDAVİMİ) KARTI */}
-        <div className="rounded-2xl p-3.5 sm:p-4 bg-gradient-to-r from-amber-950/60 via-[#181a30] to-amber-950/40 border-2 border-amber-500/40 shadow-lg relative overflow-hidden">
-          <div className="flex items-center justify-between gap-3">
-            <Link
-              href={`/u/${venueData.mayor.handle}`}
-              className="flex items-center gap-3 group/mayor hover:opacity-90 transition min-w-0"
-              title={`@${venueData.mayor.handle} profilini görüntüle`}
-            >
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-center text-2xl shadow-inner shrink-0 relative group-hover/mayor:scale-105 transition">
-                <span>{venueData.mayor.avatar}</span>
-                <span className="absolute -top-2 -right-1 text-sm animate-bounce">👑</span>
+        {/* 👑 MAYOR (MEKANIN MUHTARI) KARTI */}
+        <div className="mb-4 p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-amber-900/20 to-transparent border border-amber-500/30 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="relative shrink-0">
+              <span className="text-3xl p-1 block">{venueData.mayor.avatar}</span>
+              <span className="absolute -top-1 -right-1 text-sm">👑</span>
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-mono uppercase tracking-wider font-black text-amber-400">
+                  Mekan Muhtarı
+                </span>
+                <span className="text-[10px] text-amber-300/80 font-mono">
+                  ({venueData.mayor.checkInCount} check-in)
+                </span>
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-mono font-extrabold text-amber-400 uppercase tracking-wider">
-                    Mekanın Mayor'ı
-                  </span>
-                </div>
-                <h3 className="text-sm sm:text-base font-black text-white truncate group-hover/mayor:text-amber-300 transition">
-                  {venueData.mayor.displayName} <span className="text-xs text-slate-400 font-normal">(@{venueData.mayor.handle})</span>
-                </h3>
-                <p className="text-[11px] text-amber-300/80 font-mono">
-                  Son 30 günde <b>{venueData.mayor.checkInCount}</b> check-in • Mekanın müdavimi
-                </p>
-              </div>
-            </Link>
-            <div className="hidden xs:flex flex-col items-end shrink-0">
               <Link
                 href={`/u/${venueData.mayor.handle}`}
-                className="text-[9px] font-mono bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 px-2 py-0.5 rounded-lg border border-amber-500/40 transition"
+                className="text-sm font-bold text-white hover:text-amber-300 transition flex items-center gap-1 group/m truncate"
+                title={`@${venueData.mayor.handle} profilini görüntüle`}
               >
-                PROFİL →
+                <span className="truncate">{venueData.mayor.displayName}</span>
+                <span className="text-[11px] text-slate-400 group-hover/m:text-amber-300 font-mono">
+                  @{venueData.mayor.handle}
+                </span>
+                <span className="text-[10px] opacity-0 group-hover/m:opacity-100 text-amber-400 transition">↗</span>
               </Link>
             </div>
           </div>
+          <div className="text-right shrink-0">
+            <div className="text-[10px] text-slate-400 font-mono">Toplam Ziyaret</div>
+            <div className="text-sm font-bold text-amber-300 font-mono">{venueData.totalVisits} kez</div>
+            <Link
+              href={`/u/${venueData.mayor.handle}`}
+              className="inline-block mt-1 text-[10px] font-bold text-amber-400 hover:text-amber-300 underline"
+            >
+              Profili Gör
+            </Link>
+          </div>
         </div>
 
-        {/* 👥 ŞU AN MEKANDAKİLER LİSTESİ */}
-        <div>
+        {/* 👥 ŞU AN BURADA OLANLAR LİSTESİ */}
+        <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-              <h4 className="text-xs sm:text-sm font-bold text-white">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
                 Şu An Burada ({venueData.activeUsers.length} kişi)
               </h4>
             </div>
@@ -256,16 +283,16 @@ export function CheckInModal({
                 >
                   <Link
                     href={`/u/${u.handle}`}
-                    className="flex items-center gap-2.5 min-w-0 hover:opacity-90 transition"
+                    className="flex items-center gap-2.5 min-w-0 hover:opacity-90 transition flex-1"
                     title={`@${u.handle} profilini görüntüle`}
                   >
                     <span className="text-xl shrink-0 p-1 rounded-lg bg-slate-800 group-hover/user:scale-105 transition">{u.avatar}</span>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-bold text-white truncate group-hover/user:text-cyan-300 transition">
                           {u.displayName || u.handle}
                         </span>
-                        <span className="text-[10px] text-slate-400 font-mono">
+                        <span className="text-[10px] text-slate-400 font-mono truncate">
                           @{u.handle}
                         </span>
                       </div>
@@ -296,11 +323,13 @@ export function CheckInModal({
         {/* 📍 CHECK-IN AKSIYON FORMU */}
         <div className="pt-3 border-t border-slate-800">
           {isCheckedInHere ? (
-            <div className="p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">✅</span>
-                <div>
-                  <div className="text-xs font-bold text-emerald-300">Şu an bu mekandasın!</div>
+            <div className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="text-2xl shrink-0">✅</span>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-emerald-300 truncate">
+                    Şu an <Link href={`/u/${myCheckIn!.handle}`} className="underline hover:text-white font-mono">@{myCheckIn!.handle}</Link> olarak buradasın!
+                  </div>
                   <div className="text-[10px] text-slate-400 font-mono">
                     {formatTimeAgo(myCheckIn!.timestamp)} check-in yapıldı
                   </div>
@@ -308,7 +337,7 @@ export function CheckInModal({
               </div>
               <button
                 onClick={handleCheckOut}
-                className="px-3.5 py-1.5 rounded-xl bg-rose-600/80 hover:bg-rose-500 text-white font-bold text-xs transition"
+                className="px-3.5 py-1.5 rounded-xl bg-rose-600/80 hover:bg-rose-500 text-white font-bold text-xs transition shrink-0"
               >
                 Çıkış Yap
               </button>
@@ -347,7 +376,7 @@ export function CheckInModal({
                       setHandle(e.target.value);
                       setDisplayName(e.target.value);
                     }}
-                    placeholder="Örn: aykut_sn"
+                    placeholder={loggedInUser?.handle ? `@${loggedInUser.handle}` : "Örn: aykut_sn"}
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 font-medium"
                     required={!isAnonymous}
                   />
@@ -378,16 +407,15 @@ export function CheckInModal({
 
               {myCheckIn && (
                 <p className="text-[10px] text-amber-400/90 font-mono">
-                  ⚠️ Şu an &ldquo;{myCheckIn.venueTitle}&rdquo; mekanındasın. Buraya check-in yaparsan önceki sonlanır.
+                  ⚠️ Başka bir mekanda ({myCheckIn.venueName}) aktif check-in&apos;in var. Buraya check-in yaparsan orası sonlanacak.
                 </p>
               )}
 
               <button
                 type="submit"
-                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs shadow-lg transition flex items-center justify-center gap-2"
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-cyan-500/20 active:scale-[0.98]"
               >
-                <span>📍</span>
-                <span>Buradayım! (@{handle.trim() || (loggedInUser?.handle || loggedInUser?.username) || "sen"} Olarak Check-in Yap)</span>
+                📍 Buradayım! (Check-in Yap)
               </button>
             </form>
           )}

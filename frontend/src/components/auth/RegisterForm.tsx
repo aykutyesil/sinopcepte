@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { toFormErrors } from "@/lib/api-errors";
 import { ApiError, register } from "@/lib/client-api";
 import {
@@ -19,7 +19,6 @@ type Field = "handle" | "email" | "password" | "kvkkAccepted";
 type Errors = Partial<Record<Field, string>>;
 
 export function RegisterForm() {
-  const router = useRouter();
   const next = safeNext(useSearchParams().get("next"), "/profil");
 
   const [handle, setHandle] = useState("");
@@ -60,7 +59,8 @@ export function RegisterForm() {
     setBusy(true);
     try {
       await register({ handle: normalizeHandle(handle), email: normalizeEmail(email), password, kvkkAccepted: true });
-      router.replace(next);
+      // Yeni kullanıcı oluşturulduğunda oturumu ve frontend durumunu tazelemek için tam yönlendirme
+      window.location.href = next;
     } catch (err) {
       const fe =
         err instanceof ApiError ? toFormErrors(err.status, err.body, err.retryAfter) : toFormErrors(0, null);
