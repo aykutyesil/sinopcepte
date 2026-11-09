@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import type { Item } from "@/lib/types";
+import { useEffect, useState } from "react";
+import type { Item, AuthUser } from "@/lib/types";
+import { fetchMe } from "@/lib/client-api";
 import {
   formatTimeAgo,
   getCheckInState,
@@ -13,7 +14,7 @@ import {
   type CheckInUser,
 } from "@/lib/checkin";
 
-const AVATAR_OPTIONS = ["👑", "🌊", "☕", "🍔", "🎧", "⚡", "✨", "🎸", "🍕", "🍺"];
+const AVATAR_OPTIONS = ["👑", "😎", "🌊", "☕", "🍔", "🎧", "⚡", "✨", "🎸", "🍕", "🍺", "🎲"];
 
 export function CheckInModal({
   item,
@@ -41,14 +42,51 @@ export function CheckInModal({
   };
 
   const [handle, setHandle] = useState("");
-  const [avatar, setAvatar] = useState("👑");
+  const [displayName, setDisplayName] = useState("");
+  const [avatar, setAvatar] = useState("😎");
   const [note, setNote] = useState("");
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [loggedInUser, setLoggedInUser] = useState<AuthUser | null>(null);
   const [successMsg, setSuccessMsg] = useState("");
+
+  // Oturum açan kullanıcının bilgilerini otomatik doldur
+  useEffect(() => {
+    fetchMe().then((me) => {
+      if (me && (me.handle || me.username)) {
+        setLoggedInUser(me);
+        const userHandle = (me.handle || me.username).replace(/^@/, "");
+        setHandle(userHandle);
+        setDisplayName(userHandle);
+        if (me.avatar && AVATAR_OPTIONS.includes(me.avatar)) {
+          setAvatar(me.avatar);
+        }
+      } else {
+        const savedHandle = localStorage.getItem("sinopcepte_my_handle");
+        if (savedHandle) {
+          setHandle(savedHandle);
+          setDisplayName(savedHandle);
+        }
+      }
+    });
+  }, []);
 
   const handleCheckIn = (e: React.FormEvent) => {
     e.preventDefault();
-    const finalHandle = handle.trim() || "misafir_" + Math.floor(1000 + Math.random() * 9000);
-    const finalName = handle.trim() ? handle.trim() : "Misafir";
+
+    const rawHandle = handle.trim().replace(/^@/, "");
+    const finalHandle = isAnonymous
+      ? "gizli_marti_" + Math.floor(100 + Math.random() * 900)
+      : rawHandle || (loggedInUser?.handle || loggedInUser?.username) || "sinoplu_" + Math.floor(1000 + Math.random() * 9000);
+
+    const finalName = isAnonymous
+      ? "Gizli Sinoplu 🤫"
+      : displayName.trim() || rawHandle || (loggedInUser?.handle || loggedInUser?.username) || "Sinoplu";
+
+    if (!isAnonymous && rawHandle) {
+      try {
+        localStorage.setItem("sinopcepte_my_handle", rawHandle);
+      } catch {}
+    }
 
     const newUser: CheckInUser = {
       id: "u-" + Date.now(),
@@ -65,18 +103,20 @@ export function CheckInModal({
 
     // Mayor kontrolü: Eğer kullanıcının toplam check-in'i mevcut mayor'ı geçerse yeni mayor olur
     let updatedMayor = venueData.mayor;
-    if (finalHandle === venueData.mayor.handle) {
-      updatedMayor = {
-        ...venueData.mayor,
-        checkInCount: venueData.mayor.checkInCount + 1,
-      };
-    } else if (venueData.mayor.checkInCount <= 1) {
-      updatedMayor = {
-        handle: finalHandle,
-        displayName: finalName,
-        avatar: avatar,
-        checkInCount: 2,
-      };
+    if (!isAnonymous) {
+      if (finalHandle === venueData.mayor.handle) {
+        updatedMayor = {
+          ...venueData.mayor,
+          checkInCount: venueData.mayor.checkInCount + 1,
+        };
+      } else if (venueData.mayor.checkInCount <= 1) {
+        updatedMayor = {
+          handle: finalHandle,
+          displayName: finalName,
+          avatar: avatar,
+          checkInCount: 2,
+        };
+      }
     }
 
     const nextAll = {
@@ -99,7 +139,7 @@ export function CheckInModal({
       timestamp: Date.now(),
     });
 
-    setSuccessMsg("🎉 Harika! " + item.title + " mekanına başarıyla check-in yaptın.");
+    setSuccessMsg("🎉 Harika! " + item.title + " mekanına @" + finalHandle + " olarak check-in yaptın.");
     onUpdate();
   };
 
@@ -210,12 +250,16 @@ export function CheckInModal({
                     <span className="text-xl shrink-0 p-1 rounded-lg bg-slate-800">{u.avatar}</span>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-white truncate">{u.displayName}</span>
-                        <span className="text-[10px] text-slate-400 font-mono">@{u.handle}</span>
+                        <span className="text-xs font-bold text-white truncate">
+                          {u.displayName || u.handle}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          @{u.handle}
+                        </span>
                       </div>
                       {u.note && (
                         <p className="text-[11px] text-cyan-300/90 truncate italic">
-                          "{u.note}"
+                          &ldquo;{u.note}&rdquo;
                         </p>
                       )}
                     </div>
@@ -253,7 +297,7 @@ export function CheckInModal({
             <form onSubmit={handleCheckIn} className="space-y-2.5">
               <div className="flex gap-2">
                 <div className="w-24 shrink-0">
-                  <label className="block text-[10px] font-mono text-slate-400 mb-1">Avatar</label>
+                  <label className="block text-[10px] font-mono text-slate-300 mb-1 font-semibold">Avatar</label>
                   <select
                     value={avatar}
                     onChange={(e) => setAvatar(e.target.value)}
@@ -266,20 +310,32 @@ export function CheckInModal({
                     ))}
                   </select>
                 </div>
+
                 <div className="flex-1 min-w-0">
-                  <label className="block text-[10px] font-mono text-slate-400 mb-1">Rumuz / İsim</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[10px] font-mono text-slate-300 font-bold">Rumuz / İsim</label>
+                    {loggedInUser && (
+                      <span className="text-[10px] text-emerald-400 font-mono font-semibold">
+                        ✓ @{loggedInUser.handle || loggedInUser.username}
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={handle}
-                    onChange={(e) => setHandle(e.target.value)}
+                    onChange={(e) => {
+                      setHandle(e.target.value);
+                      setDisplayName(e.target.value);
+                    }}
                     placeholder="Örn: aykut_sn"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 font-medium"
+                    required={!isAnonymous}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-mono text-slate-400 mb-1">Check-in Notu (İsteğe Bağlı)</label>
+                <label className="block text-[10px] font-mono text-slate-300 mb-1 font-semibold">Check-in Notu (İsteğe Bağlı)</label>
                 <input
                   type="text"
                   value={note}
@@ -289,9 +345,20 @@ export function CheckInModal({
                 />
               </div>
 
+              {/* Anonim Seçeneği */}
+              <label className="flex items-center gap-2 cursor-pointer pt-1 text-[11px] text-slate-400 hover:text-slate-300 select-none">
+                <input
+                  type="checkbox"
+                  checked={isAnonymous}
+                  onChange={(e) => setIsAnonymous(e.target.checked)}
+                  className="w-3.5 h-3.5 rounded bg-slate-900 border-slate-700 text-rose-600 focus:ring-0"
+                />
+                <span>🤫 Anonim Check-In Yap (İsmimi gizle)</span>
+              </label>
+
               {myCheckIn && (
                 <p className="text-[10px] text-amber-400/90 font-mono">
-                  ⚠️ Şu an "{myCheckIn.venueTitle}" mekanındasın. Buraya check-in yaparsan önceki sonlanır.
+                  ⚠️ Şu an &ldquo;{myCheckIn.venueTitle}&rdquo; mekanındasın. Buraya check-in yaparsan önceki sonlanır.
                 </p>
               )}
 
@@ -300,7 +367,7 @@ export function CheckInModal({
                 className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs shadow-lg transition flex items-center justify-center gap-2"
               >
                 <span>📍</span>
-                <span>Buradayım! (Check-in Yap)</span>
+                <span>Buradayım! (@{handle.trim() || (loggedInUser?.handle || loggedInUser?.username) || "sen"} Olarak Check-in Yap)</span>
               </button>
             </form>
           )}
