@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Item, AuthUser } from "@/lib/types";
 import { fetchMe } from "@/lib/client-api";
 import { avatarEmoji } from "@/lib/avatars";
+import { addNotification } from "@/lib/notifications";
 import {
   formatTimeAgo,
   getCheckInState,
@@ -160,6 +161,26 @@ export function CheckInModal({
       handle: finalHandle,
       timestamp: Date.now(),
     });
+
+    addNotification({
+      type: "checkin",
+      title: "Mekanda Check-in Yapıldı! 📍",
+      message: `${item.title} mekanına @${finalHandle} olarak check-in yaptın.`,
+      icon: "📍",
+      badge: "Swarm",
+      actionUrl: "mekan",
+    });
+
+    if (updatedMayor.handle === finalHandle && venueData.mayor.handle !== finalHandle) {
+      addNotification({
+        type: "mayor",
+        title: "👑 Yeni Mekan Muhtarısın!",
+        message: `Tebrikler! ${item.title} mekanının yeni Mayor'ı oldun!`,
+        icon: "👑",
+        badge: "Mayor",
+        actionUrl: "mekan",
+      });
+    }
 
     setSuccessMsg(`🎉 @${finalHandle} olarak check-in yapıldı!`);
     onUpdate();

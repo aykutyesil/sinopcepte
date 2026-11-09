@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { applyToLobby, CATEGORY_INFO, type Lobby } from "@/lib/okeye4";
 import { fetchMe } from "@/lib/client-api";
 import type { AuthUser } from "@/lib/types";
+import { addNotification } from "@/lib/notifications";
 import { avatarEmoji } from "@/lib/avatars";
 
 const AVATAR_OPTIONS = ["😎", "👨‍🦱", "👩‍🦰", "🧔", "👩‍🎓", "🎸", "☕", "🎲", "🔥"];
@@ -88,6 +89,14 @@ export function ApplyModal({
     );
 
     if (res.success) {
+      addNotification({
+        type: "match",
+        title: "Katılım İsteğin İletildi! 🙋‍♂️",
+        message: `${lobby.venue} masasındaki @${lobby.host.handle}'e katılım talebin gönderildi.`,
+        icon: "🙋‍♂️",
+        badge: "Başvuru",
+        actionUrl: "okeye4",
+      });
       setSubmitted(true);
       onApplied();
     } else {

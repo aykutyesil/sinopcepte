@@ -6,6 +6,7 @@ import type { AuthUser, FeedFilter } from "@/lib/types";
 import { logout } from "@/lib/client-api";
 import { useSecretClick } from "@/hooks/useSecretClick";
 import { useThemePreference } from "@/hooks/useThemePreference";
+import { useNotifications } from "@/hooks/useNotifications";
 
 // Legacy sol dock (index.html:76-139).
 
@@ -21,7 +22,7 @@ const NAV: { filter: FeedFilter; icon: string; label: string; badge?: string }[]
 ];
 
 const ACTIVE =
-  "w-full p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-rose-600 text-white font-bold text-xs flex items-center justify-center md:justify-start gap-3 transition";
+  "w-full p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-rose-600 text-white font-bold text-xs flex items-center justify-center md:justify-start gap-3 transition shadow-lg shadow-rose-950/40";
 
 const TOOL =
   "w-full min-w-0 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center md:justify-start gap-2 transition";
@@ -33,23 +34,26 @@ export function Dock({
   filter,
   onFilter,
   onSecretTrigger,
+  onOpenNotifications,
   me,
 }: {
   filter: FeedFilter;
   onFilter: (f: FeedFilter) => void;
   onSecretTrigger: () => void;
+  onOpenNotifications?: () => void;
   /** `undefined` = oturum durumu henüz bilinmiyor (yer tutucu), `null` = oturum yok. */
   me: AuthUser | null | undefined;
 }) {
   const onLogoClick = useSecretClick(onSecretTrigger);
   const theme = useThemePreference();
+  const { unreadCount } = useNotifications();
 
   return (
     <aside className="w-14 sm:w-20 md:w-60 shrink-0 border-r border-slate-800 bg-[#070910] p-1.5 xs:p-2 sm:p-4 flex flex-col justify-between sticky top-0 h-screen z-30">
       <div>
         {/* Marka / Logo (3 Tık Admin) */}
         <div
-          className="flex items-center space-x-3 cursor-pointer select-none mb-5 sm:mb-8 px-0.5 sm:px-1"
+          className="flex items-center space-x-3 cursor-pointer select-none mb-3 sm:mb-5 px-0.5 sm:px-1"
           onClick={onLogoClick}
           title="SinopCepte Yönetici Girişi İçin 3 Tık"
           data-testid="secret-logo"
@@ -63,6 +67,28 @@ export function Dock({
             </span>
             <span className="block text-[9px] font-mono text-cyan-400 font-bold uppercase">Canlı Şehir Akışı</span>
           </div>
+        </div>
+
+        {/* 🔔 BİLDİRİMLER BUTONU (Öne Çıkarılmış) */}
+        <div className="mb-3">
+          <button
+            type="button"
+            onClick={onOpenNotifications}
+            className="w-full p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-rose-950/80 via-purple-950/50 to-slate-900 border border-rose-500/50 hover:border-rose-400 text-slate-100 font-bold text-xs flex items-center justify-center md:justify-between transition group shadow-lg shadow-rose-950/30 active:scale-98"
+            title="Canlı Bildirimler"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="text-base sm:text-lg group-hover:scale-110 transition shrink-0">🔔</span>
+              <span className="hidden md:inline font-bold truncate">Bildirimler</span>
+            </div>
+            {unreadCount > 0 ? (
+              <span className="px-1.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black animate-pulse shadow shrink-0">
+                {unreadCount}
+              </span>
+            ) : (
+              <span className="hidden md:inline text-[10px] text-slate-400 font-mono">0</span>
+            )}
+          </button>
         </div>
 
         {/* Dikey Menü Butonları */}
@@ -88,13 +114,22 @@ export function Dock({
         </nav>
       </div>
 
-      {/* Alt Araçlar: Hesap + Tema */}
-      <div className="pt-3 sm:pt-4 border-t border-slate-800 space-y-2">
-        <AccountButton me={me} />
-        <button type="button" onClick={theme.toggle} className={TOOL} title="Görünüm Modu">
-          <span>{theme.icon}</span>
-          <span className="hidden md:inline">Görünüm Modu</span>
+      {/* Alt Araçlar: Tema + Hesap */}
+      <div className="space-y-2 pt-3 border-t border-slate-800/80">
+        <button
+          type="button"
+          onClick={theme.toggle}
+          className={`${TOOL} hidden sm:flex`}
+          title={`Tema: Şu an ${theme.isDark ? "Koyu" : "Açık"} (tıkla: ${
+            theme.isDark ? "Açık" : "Koyu"
+          })`}
+          data-testid="theme-toggle"
+        >
+          <span className="shrink-0 text-base leading-none">{theme.isDark ? "🌙" : "☀️"}</span>
+          <span className="hidden md:inline">{theme.isDark ? "Koyu Tema" : "Açık Tema"}</span>
         </button>
+
+        <AccountButton me={me} />
       </div>
     </aside>
   );

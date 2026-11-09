@@ -15,6 +15,7 @@ import { AdminLoginModal } from "./admin/AdminLoginModal";
 import { AdminPanelModal } from "./admin/AdminPanelModal";
 import { Okeye4Feed } from "./okeye4/Okeye4Feed";
 import { Okeye4Widget } from "./okeye4/Okeye4Widget";
+import { NotificationsModal } from "./notifications/NotificationsModal";
 
 // Legacy portal.html SPA düzeni: sol dock (20-30), orta akış (32-230), sağ ray (231-314).
 // SSR'dan `data` dolu gelir (yükleniyor durumu yok); yalnız istemci yenilemelerinde `null` olabilir.
@@ -28,6 +29,7 @@ export function Portal({ data }: { data: PortalData | null }) {
   const [me, setMe] = useState<AuthUser | null | undefined>(undefined);
   const [loginOpen, setLoginOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
 
   const loading = data === null;
   // Props'tan türet (state'e kopyalama yok) → router.refresh() sonrası akış güncellenir.
@@ -89,7 +91,13 @@ export function Portal({ data }: { data: PortalData | null }) {
   return (
     <>
       <div className="max-w-7xl mx-auto flex min-h-screen w-full overflow-x-hidden">
-        <Dock filter={filter} onFilter={handleFilter} onSecretTrigger={openAdmin} me={me} />
+        <Dock
+          filter={filter}
+          onFilter={handleFilter}
+          onSecretTrigger={openAdmin}
+          onOpenNotifications={() => setNotifOpen(true)}
+          me={me}
+        />
 
         <main className="flex-1 min-w-0 w-full max-w-2xl border-r border-slate-800 p-2.5 xs:p-3 sm:p-6 pb-20 overflow-x-hidden">
           <FeedHeader
@@ -98,6 +106,7 @@ export function Portal({ data }: { data: PortalData | null }) {
             weather={weather}
             pharmacy={data?.pharmacy ?? null}
             pharmacyState={loading ? "loading" : data.pharmacy ? "ok" : data.pharmacyError ? "error" : "none"}
+            onOpenNotifications={() => setNotifOpen(true)}
           />
 
           {filter === "okeye4" ? (
@@ -125,6 +134,13 @@ export function Portal({ data }: { data: PortalData | null }) {
       </div>
 
       {isAdmin && <AdminFloatingBar onPanel={() => setPanelOpen(true)} onLogout={handleLogout} />}
+
+      {/* 🔔 Canlı Bildirimler Modalı */}
+      <NotificationsModal
+        isOpen={notifOpen}
+        onClose={() => setNotifOpen(false)}
+        onNavigateFilter={handleFilter}
+      />
 
       {loginOpen && (
         <AdminLoginModal

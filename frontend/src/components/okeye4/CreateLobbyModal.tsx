@@ -9,6 +9,7 @@ import {
 } from "@/lib/okeye4";
 import { fetchMe } from "@/lib/client-api";
 import type { AuthUser } from "@/lib/types";
+import { addNotification } from "@/lib/notifications";
 import { avatarEmoji } from "@/lib/avatars";
 
 const PRESET_VENUES = [
@@ -117,6 +118,15 @@ export function CreateLobbyModal({
       currentCount: Math.max(1, totalCount - neededCount),
       note: note.trim() || "Masamıza katılacak samimi arkadaşlar arıyoruz!",
       expiresInMinutes: durationMinutes,
+    });
+
+    addNotification({
+      type: "match",
+      title: "Masa İlanın Yayında! 🀄",
+      message: `${finalVenue} mekanında ${CATEGORY_INFO[category].label} için ${neededCount} kişi arıyorsun.`,
+      icon: "🀄",
+      badge: "İlanım",
+      actionUrl: "okeye4",
     });
 
     onCreated(newLobby);

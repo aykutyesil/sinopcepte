@@ -1,6 +1,7 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
+import { addNotification } from "@/lib/notifications";
 import {
   respondToRequest,
   type Lobby,
@@ -20,8 +21,19 @@ export function HostManageModal({
   if (!isOpen || !lobby) return null;
 
   const handleAction = (requestId: string, accept: boolean) => {
+    const targetReq = lobby.requests.find((r) => r.id === requestId);
     const res = respondToRequest(lobby.id, requestId, accept);
     if (res.success) {
+      if (accept && targetReq) {
+        addNotification({
+          type: "match",
+          title: "Katılımcıyı Masaya Kabul Ettin! 🎉",
+          message: `@${targetReq.user.handle} masana katıldı. WhatsApp bağlantısı hazır.`,
+          icon: "🎉",
+          badge: "Kabul",
+          actionUrl: "okeye4",
+        });
+      }
       onUpdated();
     }
   };
