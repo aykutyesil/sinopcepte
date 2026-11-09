@@ -1,4 +1,4 @@
-// Beklenenler legacy `renderFeedStream` / `filterFeed` / `handleSearch` ve seed JSON okunarak yazıldı.
+﻿// Beklenenler legacy `renderFeedStream` / `filterFeed` / `handleSearch` ve seed JSON okunarak yazıldı.
 import { describe, expect, it } from "vitest";
 import { buildFeed, displayRating, formatPhone, itemPrimaryAction } from "./feed";
 import { buildAdminPayload, EMPTY_ADMIN_FORM } from "./admin";
@@ -95,7 +95,7 @@ describe("kart yardımcıları", () => {
 
   it("WhatsApp bağlantısı legacy metnini encodeURIComponent ile taşır", () => {
     expect(itemPrimaryAction(byId("m-3")).href).toBe(
-      "https://wa.me/905555555555?text=Cem's%20Burger%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum",
+      "https://wa.me/905335738857?text=Cem's%20Burger%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum",
     );
   });
 

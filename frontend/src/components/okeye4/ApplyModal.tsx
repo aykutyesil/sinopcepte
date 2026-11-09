@@ -6,6 +6,7 @@ import { fetchMe } from "@/lib/client-api";
 import type { AuthUser } from "@/lib/types";
 import { addNotification } from "@/lib/notifications";
 import { avatarEmoji } from "@/lib/avatars";
+import { getMemberPhone } from "@/lib/member-phones";
 
 const AVATAR_OPTIONS = ["😎", "👨‍🦱", "👩‍🦰", "🧔", "👩‍🎓", "🎸", "☕", "🎲", "🔥"];
 
@@ -41,6 +42,10 @@ export function ApplyModal({
       setName(h);
       if (u.avatar) {
         setAvatar(avatarEmoji(u.avatar));
+      }
+      const memberPhone = getMemberPhone(h) || localStorage.getItem("sinopcepte_phone") || "";
+      if (memberPhone) {
+        setPhone(memberPhone);
       }
     };
 

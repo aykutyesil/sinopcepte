@@ -11,6 +11,7 @@ import { fetchMe } from "@/lib/client-api";
 import type { AuthUser } from "@/lib/types";
 import { addNotification } from "@/lib/notifications";
 import { avatarEmoji } from "@/lib/avatars";
+import { getMemberPhone } from "@/lib/member-phones";
 
 const PRESET_VENUES = [
   "Mathiday's Social Club",
@@ -62,6 +63,10 @@ export function CreateLobbyModal({
       setHostName(h);
       if (u.avatar) {
         setHostAvatar(avatarEmoji(u.avatar));
+      }
+      const memberPhone = getMemberPhone(h) || localStorage.getItem("sinopcepte_phone") || "";
+      if (memberPhone) {
+        setHostPhone(memberPhone);
       }
     };
 
