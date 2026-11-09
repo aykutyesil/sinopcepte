@@ -59,7 +59,7 @@ export function Dock({
           </div>
           <div className="hidden md:block">
             <span className="text-lg font-black tracking-tight text-white font-display">
-              Sinop<span className="text-rose-500">Radar</span>
+              Sinop<span className="text-rose-500">Cepte</span>
             </span>
             <span className="block text-[9px] font-mono text-cyan-400 font-bold uppercase">Canlı Şehir Akışı</span>
           </div>

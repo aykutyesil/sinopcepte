@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import type { ReactNode } from "react";
 
 // Giriş/kayıt/profil sayfalarının ortak kabuğu ve form parçaları. Görsel dil Dock ve admin
@@ -23,7 +23,7 @@ export function AuthShell({ children, wide = false }: { children: ReactNode; wid
               📡
             </span>
             <span className="text-lg font-black tracking-tight text-white font-display truncate">
-              Sinop<span className="text-rose-500">Radar</span>
+              Sinop<span className="text-rose-500">Cepte</span>
             </span>
           </Link>
           <Link href="/" className="text-xs font-bold text-slate-400 hover:text-white shrink-0">

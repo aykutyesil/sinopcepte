@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { buildAdminPayload, EMPTY_ADMIN_FORM, resetAfterSave, type AdminForm } from "@/lib/admin";
@@ -86,7 +86,7 @@ export function AdminPanelModal({
     >
       <div className="bg-[#0f1428] border border-slate-800 rounded-3xl max-w-2xl w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center pb-3 border-b border-slate-800">
-          <h3 className="font-bold text-lg text-white">Sinop Radar Yönetim Paneli</h3>
+          <h3 className="font-bold text-lg text-white">SinopCepte Yönetim Paneli</h3>
           <button type="button" onClick={onClose} className="text-slate-400 hover:text-white text-lg" aria-label="Kapat">
             ✕
           </button>
