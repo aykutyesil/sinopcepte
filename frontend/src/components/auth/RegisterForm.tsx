@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useLayoutEffect, useState } from "react";
 import Link from "next/link";
@@ -19,7 +19,10 @@ type Field = "handle" | "email" | "password" | "kvkkAccepted";
 type Errors = Partial<Record<Field, string>>;
 
 export function RegisterForm() {
-  const next = safeNext(useSearchParams().get("next"), "/profil");
+  const rawNext = useSearchParams().get("next");
+  const parsedNext = safeNext(rawNext, "/");
+  // Kayıt ve giriş sonrası profil yerine doğrudan ana sayfaya yönlendir
+  const next = parsedNext === "/profil" ? "/" : parsedNext;
 
   const [handle, setHandle] = useState("");
   const [email, setEmail] = useState("");

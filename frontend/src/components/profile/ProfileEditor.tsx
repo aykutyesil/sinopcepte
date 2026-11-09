@@ -28,7 +28,7 @@ import {
 import { CARD, FieldError, FormError, FormSuccess, INPUT, INPUT_ERROR, Label, PRIMARY_BTN, SECONDARY_BTN } from "../auth/ui";
 import { AvatarPicker } from "./AvatarPicker";
 
-const LOGIN_REDIRECT = "/giris?next=%2Fprofil";
+const LOGIN_REDIRECT = "/giris";
 
 type Load = { state: "loading" } | { state: "error" } | { state: "ok"; profile: OwnProfile };
 

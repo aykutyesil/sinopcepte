@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useLayoutEffect, useState } from "react";
 import Link from "next/link";
@@ -11,7 +11,9 @@ import { CARD, FormError, INPUT, Label, PRIMARY_BTN } from "./ui";
 export function LoginForm() {
   const params = useSearchParams();
   const rawNext = params.get("next");
-  const next = safeNext(rawNext);
+  const parsedNext = safeNext(rawNext, "/");
+  // Üye girişi yapıldığında profil yerine doğrudan ana sayfaya yönlendir
+  const next = parsedNext === "/profil" ? "/" : parsedNext;
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
