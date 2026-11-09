@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CATEGORY_INFO,
   createLobby,
   type Lobby,
   type LobbyCategory,
 } from "@/lib/okeye4";
+import { fetchMe } from "@/lib/client-api";
+import type { AuthUser } from "@/lib/types";
 
 const PRESET_VENUES = [
   "Mathiday's Social Club",
@@ -23,10 +25,12 @@ export function CreateLobbyModal({
   isOpen,
   onClose,
   onCreated,
+  currentUser,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onCreated: (lobby: Lobby) => void;
+  currentUser?: AuthUser | null;
 }) {
   const [category, setCategory] = useState<LobbyCategory>("okey");
   const [title, setTitle] = useState("");
@@ -37,10 +41,45 @@ export function CreateLobbyModal({
   const [neededCount, setNeededCount] = useState(1);
   const [note, setNote] = useState("");
   const [durationMinutes, setDurationMinutes] = useState(90);
-  const [hostName, setHostName] = useState("Aykut Y.");
-  const [hostHandle, setHostHandle] = useState("aykut_57");
+
+  // Profil & İlan Sahibi State'leri
+  const [hostName, setHostName] = useState("");
+  const [hostHandle, setHostHandle] = useState("");
   const [hostAvatar, setHostAvatar] = useState("😎");
-  const [hostPhone, setHostPhone] = useState("0544 123 45 67");
+  const [hostPhone, setHostPhone] = useState("");
+  const [loggedInUser, setLoggedInUser] = useState<AuthUser | null>(currentUser ?? null);
+
+  // Kullanıcı oturumunu algıla ve otomatik doldur
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fillUser = (u: AuthUser) => {
+      setLoggedInUser(u);
+      const h = u.handle || u.username || "";
+      setHostHandle(h);
+      setHostName(h);
+      if (u.avatar && AVATAR_OPTIONS.includes(u.avatar)) {
+        setHostAvatar(u.avatar);
+      }
+    };
+
+    if (currentUser && (currentUser.handle || currentUser.username)) {
+      fillUser(currentUser);
+    } else {
+      fetchMe().then((u) => {
+        if (u && (u.handle || u.username)) {
+          fillUser(u);
+        } else {
+          // Oturum yoksa son kullanılan yerel telefon veya adı al
+          const savedPhone = localStorage.getItem("sinopcepte_phone");
+          if (savedPhone) setHostPhone(savedPhone);
+        }
+      });
+    }
+
+    const savedPhone = localStorage.getItem("sinopcepte_phone");
+    if (savedPhone) setHostPhone(savedPhone);
+  }, [isOpen, currentUser]);
 
   if (!isOpen) return null;
 
@@ -51,17 +90,26 @@ export function CreateLobbyModal({
       title.trim() ||
       `${finalVenue}'da ${CATEGORY_INFO[category].label} için ${neededCount} kişi aranıyor`;
 
+    const cleanHandle = hostHandle.trim().replace(/^@/, "") || (loggedInUser?.handle || loggedInUser?.username) || "sinoplu";
+    const cleanPhone = hostPhone.trim();
+
+    if (cleanPhone) {
+      try {
+        localStorage.setItem("sinopcepte_phone", cleanPhone);
+      } catch {}
+    }
+
     const newLobby = createLobby({
       category,
       title: finalTitle,
       venue: finalVenue,
       locationDetails: locationDetails.trim() || "Masa başında bekliyoruz",
       host: {
-        name: hostName.trim() || "Masa Sahibi",
-        handle: hostHandle.trim().replace(/^@/, "") || "sinoplu",
+        name: hostName.trim() || cleanHandle,
+        handle: cleanHandle,
         avatar: hostAvatar,
-        phone: hostPhone.trim(),
-        wa: hostPhone.replace(/\D/g, "") ? (hostPhone.startsWith("0") ? "9" + hostPhone.replace(/\D/g, "") : hostPhone.replace(/\D/g, "")) : undefined,
+        phone: cleanPhone,
+        wa: cleanPhone.replace(/\D/g, "") ? (cleanPhone.startsWith("0") ? "9" + cleanPhone.replace(/\D/g, "") : cleanPhone.replace(/\D/g, "")) : undefined,
       },
       totalCount,
       neededCount,
@@ -264,13 +312,21 @@ export function CreateLobbyModal({
           </div>
 
           {/* Profil & İletişim Bilgileri */}
-          <div className="p-3 rounded-2xl bg-[#070914] border border-slate-800 space-y-2.5">
+          <div className="p-3.5 rounded-2xl bg-[#070914] border border-slate-800 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
-                👑 İlan Sahibi Bilgileri
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-bold text-slate-200 uppercase tracking-wider">
+                  👑 İlan Sahibi Bilgileri
+                </span>
+                {loggedInUser && (
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                    Oturum Açık (@{loggedInUser.handle || loggedInUser.username})
+                  </span>
+                )}
+              </div>
               <span className="text-[10px] text-cyan-400 font-mono">Onay sonrası paylaşılır</span>
             </div>
+
             <div className="flex items-center gap-2 overflow-x-auto pb-1">
               <span className="text-[10px] text-slate-400">Avatar:</span>
               {AVATAR_OPTIONS.map((av) => (
@@ -288,22 +344,36 @@ export function CreateLobbyModal({
                 </button>
               ))}
             </div>
+
             <div className="grid grid-cols-2 gap-2">
-              <input
-                type="text"
-                value={hostHandle}
-                onChange={(e) => setHostHandle(e.target.value)}
-                placeholder="Rumuz (@aykut)"
-                className="w-full p-2 rounded-lg bg-[#0b0f20] border border-slate-800 text-white text-[11px]"
-                required
-              />
-              <input
-                type="text"
-                value={hostPhone}
-                onChange={(e) => setHostPhone(e.target.value)}
-                placeholder="WhatsApp / Tel no"
-                className="w-full p-2 rounded-lg bg-[#0b0f20] border border-slate-800 text-white text-[11px]"
-              />
+              <div>
+                <label className="block text-[10px] text-slate-400 mb-0.5 font-medium">
+                  Rumuz / Handle
+                </label>
+                <input
+                  type="text"
+                  value={hostHandle}
+                  onChange={(e) => {
+                    setHostHandle(e.target.value);
+                    setHostName(e.target.value);
+                  }}
+                  placeholder="Rumuz (@aykut)"
+                  className="w-full p-2 rounded-lg bg-[#0b0f20] border border-slate-800 text-white text-[11px] focus:border-rose-500 focus:outline-hidden"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] text-slate-400 mb-0.5 font-medium">
+                  WhatsApp / Telefon
+                </label>
+                <input
+                  type="text"
+                  value={hostPhone}
+                  onChange={(e) => setHostPhone(e.target.value)}
+                  placeholder="05xx xxx xx xx"
+                  className="w-full p-2 rounded-lg bg-[#0b0f20] border border-slate-800 text-white text-[11px] focus:border-rose-500 focus:outline-hidden"
+                />
+              </div>
             </div>
           </div>
 

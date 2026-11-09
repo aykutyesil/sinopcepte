@@ -89,7 +89,7 @@ export function Portal({ data }: { data: PortalData | null }) {
           />
 
           {filter === "okeye4" ? (
-            <Okeye4Feed />
+            <Okeye4Feed me={me} />
           ) : (
             <>
               {filter === "all" && !query && (

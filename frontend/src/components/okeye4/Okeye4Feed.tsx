@@ -7,12 +7,13 @@ import {
   type Lobby,
   type LobbyCategory,
 } from "@/lib/okeye4";
+import type { AuthUser } from "@/lib/types";
 import { LobbyCard } from "./LobbyCard";
 import { CreateLobbyModal } from "./CreateLobbyModal";
 import { ApplyModal } from "./ApplyModal";
 import { HostManageModal } from "./HostManageModal";
 
-export function Okeye4Feed() {
+export function Okeye4Feed({ me }: { me?: AuthUser | null }) {
   const [lobbies, setLobbies] = useState<Lobby[]>([]);
   const [activeCategory, setActiveCategory] = useState<LobbyCategory | "all">("all");
   const [createOpen, setCreateOpen] = useState(false);
@@ -164,6 +165,7 @@ export function Okeye4Feed() {
         onCreated={() => {
           refresh();
         }}
+        currentUser={me}
       />
 
       <ApplyModal
@@ -173,6 +175,7 @@ export function Okeye4Feed() {
         onApplied={() => {
           refresh();
         }}
+        currentUser={me}
       />
 
       <HostManageModal
@@ -181,7 +184,6 @@ export function Okeye4Feed() {
         onClose={() => setSelectedManageLobby(null)}
         onUpdated={() => {
           refresh();
-          // Seçili ilanı da tazele
           if (selectedManageLobby) {
             const current = getLobbies().find((l) => l.id === selectedManageLobby.id);
             setSelectedManageLobby(current || null);

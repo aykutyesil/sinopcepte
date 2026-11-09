@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { applyToLobby, CATEGORY_INFO, type Lobby } from "@/lib/okeye4";
+import { fetchMe } from "@/lib/client-api";
+import type { AuthUser } from "@/lib/types";
 
 const AVATAR_OPTIONS = ["😎", "👨‍🦱", "👩‍🦰", "🧔", "👩‍🎓", "🎸", "☕", "🎲", "🔥"];
 
@@ -10,19 +12,49 @@ export function ApplyModal({
   isOpen,
   onClose,
   onApplied,
+  currentUser,
 }: {
   lobby: Lobby | null;
   isOpen: boolean;
   onClose: () => void;
   onApplied: () => void;
+  currentUser?: AuthUser | null;
 }) {
-  const [handle, setHandle] = useState("sinop_sever");
-  const [name, setName] = useState("Ali");
+  const [handle, setHandle] = useState("");
+  const [name, setName] = useState("");
   const [avatar, setAvatar] = useState("😎");
-  const [phone, setPhone] = useState("0545 987 65 43");
+  const [phone, setPhone] = useState("");
   const [note, setNote] = useState("10 dakikaya oradayım, yer tutun!");
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loggedInUser, setLoggedInUser] = useState<AuthUser | null>(currentUser ?? null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fillUser = (u: AuthUser) => {
+      setLoggedInUser(u);
+      const h = u.handle || u.username || "";
+      setHandle(h);
+      setName(h);
+      if (u.avatar && AVATAR_OPTIONS.includes(u.avatar)) {
+        setAvatar(u.avatar);
+      }
+    };
+
+    if (currentUser && (currentUser.handle || currentUser.username)) {
+      fillUser(currentUser);
+    } else {
+      fetchMe().then((u) => {
+        if (u && (u.handle || u.username)) {
+          fillUser(u);
+        }
+      });
+    }
+
+    const savedPhone = localStorage.getItem("sinopcepte_phone");
+    if (savedPhone) setPhone(savedPhone);
+  }, [isOpen, currentUser]);
 
   if (!isOpen || !lobby) return null;
 
@@ -32,9 +64,15 @@ export function ApplyModal({
     e.preventDefault();
     setError(null);
 
-    const cleanHandle = handle.trim().replace(/^@/, "") || "misafir";
+    const cleanHandle = handle.trim().replace(/^@/, "") || (loggedInUser?.handle || loggedInUser?.username) || "misafir";
     const cleanPhone = phone.trim();
     const cleanWa = cleanPhone.replace(/\D/g, "");
+
+    if (cleanPhone) {
+      try {
+        localStorage.setItem("sinopcepte_phone", cleanPhone);
+      } catch {}
+    }
 
     const res = applyToLobby(
       lobby.id,
@@ -141,9 +179,16 @@ export function ApplyModal({
 
             {/* Avatar Seçici */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                Profil Avatarın
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                  Profil Avatarın
+                </label>
+                {loggedInUser && (
+                  <span className="text-[10px] text-emerald-400 font-mono">
+                    @{loggedInUser.handle || loggedInUser.username}
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-2 overflow-x-auto pb-1">
                 {AVATAR_OPTIONS.map((av) => (
                   <button
@@ -172,6 +217,7 @@ export function ApplyModal({
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  placeholder="İsmin"
                   className="w-full p-2.5 rounded-xl bg-[#080b18] border border-slate-800 focus:border-rose-500 focus:outline-hidden text-white"
                   required
                 />
@@ -184,6 +230,7 @@ export function ApplyModal({
                   type="text"
                   value={handle}
                   onChange={(e) => setHandle(e.target.value)}
+                  placeholder="Rumuz (@handle)"
                   className="w-full p-2.5 rounded-xl bg-[#080b18] border border-slate-800 focus:border-rose-500 focus:outline-hidden text-white"
                   required
                 />
