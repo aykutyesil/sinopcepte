@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import type { Item, AuthUser } from "@/lib/types";
 import { fetchMe } from "@/lib/client-api";
 import {
@@ -196,8 +197,12 @@ export function CheckInModal({
         {/* 👑 MEKANIN MAYOR'I (MÜDAVİMİ) KARTI */}
         <div className="rounded-2xl p-3.5 sm:p-4 bg-gradient-to-r from-amber-950/60 via-[#181a30] to-amber-950/40 border-2 border-amber-500/40 shadow-lg relative overflow-hidden">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-center text-2xl shadow-inner shrink-0 relative">
+            <Link
+              href={`/u/${venueData.mayor.handle}`}
+              className="flex items-center gap-3 group/mayor hover:opacity-90 transition min-w-0"
+              title={`@${venueData.mayor.handle} profilini görüntüle`}
+            >
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-center text-2xl shadow-inner shrink-0 relative group-hover/mayor:scale-105 transition">
                 <span>{venueData.mayor.avatar}</span>
                 <span className="absolute -top-2 -right-1 text-sm animate-bounce">👑</span>
               </div>
@@ -207,18 +212,21 @@ export function CheckInModal({
                     Mekanın Mayor'ı
                   </span>
                 </div>
-                <h3 className="text-sm sm:text-base font-black text-white truncate">
+                <h3 className="text-sm sm:text-base font-black text-white truncate group-hover/mayor:text-amber-300 transition">
                   {venueData.mayor.displayName} <span className="text-xs text-slate-400 font-normal">(@{venueData.mayor.handle})</span>
                 </h3>
                 <p className="text-[11px] text-amber-300/80 font-mono">
                   Son 30 günde <b>{venueData.mayor.checkInCount}</b> check-in • Mekanın müdavimi
                 </p>
               </div>
-            </div>
+            </Link>
             <div className="hidden xs:flex flex-col items-end shrink-0">
-              <span className="text-[9px] font-mono bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-lg border border-amber-500/40">
-                LİDER
-              </span>
+              <Link
+                href={`/u/${venueData.mayor.handle}`}
+                className="text-[9px] font-mono bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 px-2 py-0.5 rounded-lg border border-amber-500/40 transition"
+              >
+                PROFİL →
+              </Link>
             </div>
           </div>
         </div>
@@ -244,13 +252,17 @@ export function CheckInModal({
               venueData.activeUsers.map((u) => (
                 <div
                   key={u.id}
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition"
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-cyan-500/40 transition group/user"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="text-xl shrink-0 p-1 rounded-lg bg-slate-800">{u.avatar}</span>
+                  <Link
+                    href={`/u/${u.handle}`}
+                    className="flex items-center gap-2.5 min-w-0 hover:opacity-90 transition"
+                    title={`@${u.handle} profilini görüntüle`}
+                  >
+                    <span className="text-xl shrink-0 p-1 rounded-lg bg-slate-800 group-hover/user:scale-105 transition">{u.avatar}</span>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-white truncate">
+                        <span className="text-xs font-bold text-white truncate group-hover/user:text-cyan-300 transition">
                           {u.displayName || u.handle}
                         </span>
                         <span className="text-[10px] text-slate-400 font-mono">
@@ -263,10 +275,18 @@ export function CheckInModal({
                         </p>
                       )}
                     </div>
+                  </Link>
+                  <div className="flex items-center gap-2 shrink-0 pl-2">
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      {formatTimeAgo(u.timestamp)}
+                    </span>
+                    <Link
+                      href={`/u/${u.handle}`}
+                      className="text-[10px] text-cyan-400 hover:text-cyan-300 font-bold px-2 py-0.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 transition"
+                    >
+                      Profil →
+                    </Link>
                   </div>
-                  <span className="text-[10px] text-slate-400 font-mono shrink-0 pl-2">
-                    {formatTimeAgo(u.timestamp)}
-                  </span>
                 </div>
               ))
             )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   CATEGORY_INFO,
   formatTimeRemaining,
@@ -80,8 +81,16 @@ export function LobbyCard({
       {/* Masa Notu / Host Mesajı */}
       <div className="mt-2.5 p-3 rounded-2xl bg-[#070914] border border-slate-800/90 text-xs text-slate-300 relative">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-base">{lobby.host.avatar}</span>
-          <span className="font-bold text-white text-[11px]">@{lobby.host.handle}</span>
+          <Link
+            href={`/u/${lobby.host.handle}`}
+            className="flex items-center gap-1.5 hover:opacity-90 group/host"
+            title={`@${lobby.host.handle} profilini görüntüle`}
+          >
+            <span className="text-base group-hover/host:scale-110 transition">{lobby.host.avatar}</span>
+            <span className="font-bold text-white text-[11px] group-hover/host:text-amber-300 group-hover/host:underline transition">
+              @{lobby.host.handle}
+            </span>
+          </Link>
           <span className="text-[10px] text-amber-400 font-mono">👑 Masa Sahibi</span>
           {lobby.locationDetails && (
             <span className="text-[10px] text-slate-400 truncate ml-auto">

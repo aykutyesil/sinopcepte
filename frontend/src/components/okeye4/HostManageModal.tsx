@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   respondToRequest,
   type Lobby,
@@ -117,17 +118,27 @@ export function HostManageModal({
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-lg shrink-0">
+                        <Link
+                          href={`/u/${req.user.handle}`}
+                          className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-lg shrink-0 hover:scale-105 transition"
+                          title={`@${req.user.handle} profilini gör`}
+                        >
                           {req.user.avatar || "👤"}
-                        </div>
+                        </Link>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-xs text-white">
+                            <Link
+                              href={`/u/${req.user.handle}`}
+                              className="font-bold text-xs text-white hover:text-rose-400 hover:underline transition"
+                            >
                               {req.user.name}
-                            </span>
-                            <span className="text-[11px] text-rose-400 font-mono">
+                            </Link>
+                            <Link
+                              href={`/u/${req.user.handle}`}
+                              className="text-[11px] text-rose-400 font-mono hover:underline"
+                            >
                               @{req.user.handle}
-                            </span>
+                            </Link>
                           </div>
                           <p className="text-xs text-slate-300 mt-0.5">
                             “{req.note}”
