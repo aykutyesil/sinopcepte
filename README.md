@@ -88,6 +88,8 @@ Ayrıntı: [ROADMAP.md](ROADMAP.md). Çalışma planı ve durum: [graph.md](grap
 * ⏸️ **Swarm Check-In:** ertelendi.
 * ⏸️ **"Okeye 4. Aranıyor" ilanları:** karar bekliyor.
 * ❌ **Gizli İtiraf Paneli:** şimdilik kapsam dışı.
+* 🆕 **SNÜ Kampüs & Not Paylaşımı:** yol haritasına eklendi, başlanmadı.
+* 🆕 **Ortak Taksi & Masraf Paylaşımı:** yol haritasına eklendi, başlanmadı.
 
 ---
 
