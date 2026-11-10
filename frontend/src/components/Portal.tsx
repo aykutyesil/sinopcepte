@@ -15,6 +15,8 @@ import { AdminLoginModal } from "./admin/AdminLoginModal";
 import { AdminPanelModal } from "./admin/AdminPanelModal";
 import { Okeye4Feed } from "./okeye4/Okeye4Feed";
 import { Okeye4Widget } from "./okeye4/Okeye4Widget";
+import { ConfessionFeed } from "./confession/ConfessionFeed";
+import { ConfessionWidget } from "./confession/ConfessionWidget";
 import { NotificationsModal } from "./notifications/NotificationsModal";
 import { getVenueEvents, toLiveEvent, VENUE_UPDATED_EVENT } from "@/lib/venue-profile";
 
@@ -126,13 +128,21 @@ export function Portal({ data }: { data: PortalData | null }) {
 
           {filter === "okeye4" ? (
             <Okeye4Feed me={me} />
+          ) : filter === "itiraf" ? (
+            <ConfessionFeed me={me} />
           ) : (
             <>
               {filter === "all" && !query && (
-                <Okeye4Widget
-                  onViewAll={() => handleFilter("okeye4")}
-                  onOpenCreate={() => handleFilter("okeye4")}
-                />
+                <>
+                  <ConfessionWidget
+                    onViewAll={() => handleFilter("itiraf")}
+                    onOpenCreate={() => handleFilter("itiraf")}
+                  />
+                  <Okeye4Widget
+                    onViewAll={() => handleFilter("okeye4")}
+                    onOpenCreate={() => handleFilter("okeye4")}
+                  />
+                </>
               )}
               <FeedStream feed={feed} loading={loading} backendError={backendError} currentUser={me} />
             </>

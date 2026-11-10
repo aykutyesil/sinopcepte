@@ -27,6 +27,7 @@ export function RegisterForm() {
   const [handle, setHandle] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [kvkk, setKvkk] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -129,17 +130,28 @@ export function RegisterForm() {
         </div>
         <div>
           <Label htmlFor="regPassword">Şifre</Label>
-          <input
-            id="regPassword"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="new-password"
-            aria-invalid={!!errors.password}
-            aria-describedby="regPasswordHint regPasswordErr"
-            className={`${INPUT} ${errors.password ? INPUT_ERROR : ""}`}
-            disabled={busy}
-          />
+          <div className="relative">
+            <input
+              id="regPassword"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+              aria-invalid={!!errors.password}
+              aria-describedby="regPasswordHint regPasswordErr"
+              className={`${INPUT} pr-10 ${errors.password ? INPUT_ERROR : ""}`}
+              disabled={busy}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition p-1 text-sm select-none"
+              title={showPassword ? "Şifreyi Gizle" : "Şifreyi Göster"}
+              aria-label={showPassword ? "Şifreyi Gizle" : "Şifreyi Göster"}
+            >
+              {showPassword ? "👁️" : "🙈"}
+            </button>
+          </div>
           <p id="regPasswordHint" className="mt-1 text-[11px] text-slate-500">
             En az 8 karakter.
           </p>

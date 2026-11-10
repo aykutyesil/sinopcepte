@@ -9,7 +9,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sinopcepte.auth.AppUser;
+import com.sinopcepte.auth.Role;
 import com.sinopcepte.web.BadRequestException;
+import com.sinopcepte.web.ForbiddenException;
+import com.sinopcepte.web.NotFoundException;
 
 @Service
 public class CheckinService {
@@ -45,5 +48,17 @@ public class CheckinService {
                 mood != null ? mood.trim() : null,
                 now);
         return checkins.save(checkin);
+    }
+
+    @Transactional
+    public void deleteCheckin(AppUser user, String checkinId) {
+        VenueCheckin c = checkins.findById(checkinId)
+                .orElseThrow(() -> new NotFoundException("Check-in bulunamadı"));
+        boolean isOwner = c.getHandle().equalsIgnoreCase(user.getUsername());
+        boolean isAdmin = user.getRole() == Role.ADMIN;
+        if (!isOwner && !isAdmin) {
+            throw new ForbiddenException("Bu check-in kaydını silme yetkiniz yok");
+        }
+        checkins.delete(c);
     }
 }

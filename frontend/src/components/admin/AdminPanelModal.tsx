@@ -5,6 +5,13 @@ import Link from "next/link";
 import { buildAdminPayload, EMPTY_ADMIN_FORM, resetAfterSave, type AdminForm } from "@/lib/admin";
 import { ApiError, createEvent, createItem, deleteEvent, deleteItem } from "@/lib/client-api";
 import type { Item, LiveEvent } from "@/lib/types";
+import { avatarEmoji } from "@/lib/avatars";
+import {
+  fetchAdminConfessions,
+  adminToggleHideConfession,
+  adminDeleteConfession,
+  type Confession,
+} from "@/lib/confessions";
 import {
   getVenueClaims,
   updateVenueClaim,
@@ -19,6 +26,25 @@ import {
 
 const INPUT = "w-full bg-[#080b18] border border-slate-800 rounded-xl p-2.5 text-white";
 
+export interface AdminUserItem {
+  id: number;
+  username: string;
+  email: string | null;
+  phone: string | null;
+  role: string;
+  avatar: string;
+  bio: string | null;
+  instagram: string | null;
+  badgesJson: string;
+  checkinVisibility: string;
+  anonymousMode: boolean;
+  createdAt: string;
+  checkinCount: number;
+  lobbyCount: number;
+  confessionCount: number;
+  ownedVenues: string[];
+}
+
 export function AdminPanelModal({
   events,
   items,
@@ -32,7 +58,7 @@ export function AdminPanelModal({
   onChanged: () => void;
   onUnauthorized: () => void;
 }) {
-  const [activeTab, setActiveTab] = useState<"catalog" | "claims">("catalog");
+  const [activeTab, setActiveTab] = useState<"catalog" | "claims" | "confessions" | "users">("catalog");
   const [form, setForm] = useState<AdminForm>(EMPTY_ADMIN_FORM);
   const [busy, setBusy] = useState(false);
 
@@ -40,6 +66,64 @@ export function AdminPanelModal({
   const [claims, setClaims] = useState<VenueClaimRequest[]>([]);
   const [selectedItemId, setSelectedItemId] = useState(items[0]?.id || "");
   const [assignHandle, setAssignHandle] = useState("");
+
+  // İtiraflar Moderasyon State
+  const [adminConfessions, setAdminConfessions] = useState<Confession[]>([]);
+  const [loadingConfessions, setLoadingConfessions] = useState(false);
+
+  // Kullanıcılar State
+  const [adminUsers, setAdminUsers] = useState<AdminUserItem[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+
+  const loadUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const res = await fetch("/api/admin/users");
+      if (res.ok) {
+        const data = await res.json();
+        setAdminUsers(data);
+      }
+    } catch (e) {
+      console.error("fetchAdminUsers error:", e);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const loadConfessions = async () => {
+    setLoadingConfessions(true);
+    try {
+      const res = await fetchAdminConfessions();
+      setAdminConfessions(res);
+    } catch (e) {
+      console.error("fetchAdminConfessions error:", e);
+    } finally {
+      setLoadingConfessions(false);
+    }
+  };
+
+  const handleToggleHideConfession = async (id: string) => {
+    try {
+      const updated = await adminToggleHideConfession(id);
+      setAdminConfessions((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+      onChanged();
+    } catch {
+      alert("İtiraf gizleme durumu güncellenemedi.");
+    }
+  };
+
+  const handleDeleteConfession = async (id: string) => {
+    const ok = window.confirm("Bu itirafı kalıcı olarak silmek istediğinize emin misiniz?");
+    if (!ok) return;
+    try {
+      await adminDeleteConfession(id);
+      setAdminConfessions((prev) => prev.filter((c) => c.id !== id));
+      onChanged();
+    } catch {
+      alert("İtiraf silinemedi.");
+    }
+  };
 
   const refreshClaims = () => {
     setClaims(getVenueClaims());
@@ -158,7 +242,7 @@ export function AdminPanelModal({
               activeTab === "catalog" ? "bg-rose-600 text-white shadow" : "text-slate-400 hover:text-white"
             }`}
           >
-            <span>⚡ İçerik & Akış Yönetimi</span>
+            <span>⚡ İçerik & Akış</span>
           </button>
           <button
             type="button"
@@ -167,12 +251,36 @@ export function AdminPanelModal({
               activeTab === "claims" ? "bg-amber-500 text-slate-950 shadow" : "text-slate-400 hover:text-white"
             }`}
           >
-            <span>🏪 Mekan Patronu Yetkileri</span>
+            <span>🏪 Mekan Patronları</span>
             {pendingClaims.length > 0 && (
               <span className="px-1.5 py-0.2 rounded-full bg-rose-600 text-white text-[10px] font-mono font-bold animate-pulse">
                 {pendingClaims.length}
               </span>
             )}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("confessions");
+              loadConfessions();
+            }}
+            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+              activeTab === "confessions" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <span>🤫 İtiraflar</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("users");
+              loadUsers();
+            }}
+            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+              activeTab === "users" ? "bg-cyan-600 text-white shadow" : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <span>👥 Kullanıcılar ({adminUsers.length || "46+"})</span>
           </button>
         </div>
 
@@ -255,7 +363,7 @@ export function AdminPanelModal({
               </div>
             </div>
           </>
-        ) : (
+        ) : activeTab === "claims" ? (
           <div className="space-y-5 text-xs">
             {/* Bekleyen Talepler */}
             <div className="space-y-2.5">
@@ -397,6 +505,245 @@ export function AdminPanelModal({
                 })}
               </div>
             </div>
+          </div>
+        ) : activeTab === "confessions" ? (
+          <div className="space-y-4 text-xs">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <h4 className="font-bold text-indigo-400 uppercase tracking-wider text-[11px] font-mono">
+                Sinop Gece İtirafları Moderasyonu ({adminConfessions.length})
+              </h4>
+              <button
+                type="button"
+                onClick={loadConfessions}
+                disabled={loadingConfessions}
+                className="text-[11px] text-slate-400 hover:text-white px-2 py-1 rounded-lg bg-slate-900 border border-slate-800"
+              >
+                {loadingConfessions ? "Yenileniyor..." : "↻ Yenile"}
+              </button>
+            </div>
+
+            {loadingConfessions && adminConfessions.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 font-mono text-xs">
+                İtiraflar yükleniyor...
+              </div>
+            ) : adminConfessions.length === 0 ? (
+              <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800 text-slate-500 text-center">
+                Henüz kayıtlı itiraf bulunmuyor.
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+                {adminConfessions.map((c) => (
+                  <div
+                    key={c.id}
+                    className={`p-3.5 rounded-2xl border space-y-2 transition ${
+                      c.hidden
+                        ? "bg-slate-950/60 border-slate-800 opacity-60"
+                        : c.reportCount > 0
+                        ? "bg-rose-950/20 border-rose-500/40"
+                        : "bg-slate-950 border-slate-800"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base select-none">{avatarEmoji(c.aliasAvatar)}</span>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-white text-xs">{c.aliasName}</span>
+                            {c.realAuthorHandle && (
+                              <Link
+                                href={`/u/${c.realAuthorHandle}`}
+                                className="text-[10px] font-mono font-bold text-amber-300 bg-amber-500/20 px-1.5 py-0.2 rounded border border-amber-500/40 hover:underline"
+                                title="Admin Görünümü: Gerçek Yazar"
+                              >
+                                👁️ Gerçek: @{c.realAuthorHandle} {c.realAuthorPhone ? `(${c.realAuthorPhone})` : ""}
+                              </Link>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-mono">
+                            <span>#{c.category}</span>
+                            {c.venueTitle && <span>• 📍 {c.venueTitle}</span>}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {c.reportCount > 0 && (
+                          <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 font-mono font-bold text-[10px]">
+                            🚩 {c.reportCount} Şikayet
+                          </span>
+                        )}
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
+                            c.hidden
+                              ? "bg-amber-500/10 text-amber-300 border-amber-500/30"
+                              : "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
+                          }`}
+                        >
+                          {c.hidden ? "Gizli" : "Yayında"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-200 bg-[#080b18] p-2.5 rounded-xl border border-slate-900 whitespace-pre-wrap">
+                      {c.body}
+                    </p>
+
+                    <div className="flex items-center justify-between text-[11px] pt-1">
+                      <div className="flex items-center gap-2 text-slate-400 font-mono text-[10px]">
+                        <span>🔥 {c.fireCount}</span>
+                        <span>😂 {c.laughCount}</span>
+                        <span>😱 {c.shockCount}</span>
+                        <span>❤️ {c.heartCount}</span>
+                        <span>💬 {c.comments?.length || 0}</span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleHideConfession(c.id)}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition border ${
+                            c.hidden
+                              ? "bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500"
+                              : "bg-amber-600 hover:bg-amber-500 text-white border-amber-500"
+                          }`}
+                        >
+                          {c.hidden ? "Yayına Al" : "Gizle"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteConfession(c.id)}
+                          className="px-2.5 py-1 rounded-lg bg-rose-600/80 hover:bg-rose-500 text-white text-[10px] font-bold transition"
+                        >
+                          Sil
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* activeTab === "users" - Kullanıcı Rehberi */
+          <div className="space-y-4 text-xs font-mono">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800 gap-2 flex-wrap">
+              <div>
+                <h4 className="font-bold text-cyan-400 uppercase tracking-wider text-[11px] font-mono">
+                  Sistemdeki Kayıtlı Kullanıcılar ({adminUsers.length})
+                </h4>
+                <p className="text-[10px] text-slate-400">Tüm üyelerin gerçek iletişim ve gizlilik verileri</p>
+              </div>
+              <button
+                type="button"
+                onClick={loadUsers}
+                disabled={loadingUsers}
+                className="text-[11px] text-slate-400 hover:text-white px-2 py-1 rounded-lg bg-slate-900 border border-slate-800"
+              >
+                {loadingUsers ? "Yenileniyor..." : "↻ Yenile"}
+              </button>
+            </div>
+
+            {/* Arama Kutusu */}
+            <div className="relative">
+              <input
+                type="text"
+                value={userSearchQuery}
+                onChange={(e) => setUserSearchQuery(e.target.value)}
+                placeholder="Rumuz, e-posta veya telefon ile ara..."
+                className={INPUT}
+              />
+            </div>
+
+            {loadingUsers && adminUsers.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 font-mono text-xs">
+                Kullanıcılar yükleniyor...
+              </div>
+            ) : (
+              <div className="space-y-2.5 max-h-[55vh] overflow-y-auto pr-1">
+                {adminUsers
+                  .filter((u) => {
+                    const q = userSearchQuery.toLowerCase().trim();
+                    if (!q) return true;
+                    return (
+                      u.username.toLowerCase().includes(q) ||
+                      (u.email && u.email.toLowerCase().includes(q)) ||
+                      (u.phone && u.phone.includes(q))
+                    );
+                  })
+                  .map((u) => (
+                    <div
+                      key={u.id}
+                      className="p-3 rounded-2xl bg-slate-950 border border-slate-800/90 hover:border-slate-700 transition space-y-2"
+                    >
+                      <div className="flex items-start justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">{avatarEmoji(u.avatar)}</span>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Link
+                                href={`/u/${u.username}`}
+                                className="font-bold text-white text-xs hover:text-cyan-400 hover:underline"
+                              >
+                                @{u.username}
+                              </Link>
+                              {u.role === "ADMIN" ? (
+                                <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-bold">
+                                  🛡️ ADMIN
+                                </span>
+                              ) : (
+                                <span className="px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 text-[9px]">
+                                  USER
+                                </span>
+                              )}
+                              {u.ownedVenues && u.ownedVenues.length > 0 && (
+                                <span className="px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[9px] font-bold">
+                                  👑 Patron ({u.ownedVenues.join(", ")})
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-400">
+                              {u.bio || "Biyografi yok"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-right text-[10px] text-slate-400">
+                          <div>Check-in: <strong className="text-cyan-400">{u.checkinCount}</strong></div>
+                          <div>Masa: <strong className="text-amber-400">{u.lobbyCount}</strong> | İtiraf: <strong className="text-rose-400">{u.confessionCount}</strong></div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-slate-900 text-[11px]">
+                        <div className="text-slate-300 truncate">
+                          📧 {u.email || "E-posta yok"}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {u.phone ? (
+                            <>
+                              <a href={`tel:${u.phone}`} className="text-emerald-400 hover:underline">
+                                📞 {u.phone}
+                              </a>
+                              <a
+                                href={`https://wa.me/${u.phone.replace(/[^0-9]/g, "")}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-900"
+                              >
+                                WA
+                              </a>
+                            </>
+                          ) : (
+                            <span className="text-slate-500">Telefon yok</span>
+                          )}
+                          <span className="text-[10px] text-slate-500 ml-auto font-mono">
+                            Mod: {u.checkinVisibility} {u.anonymousMode ? "(Anon)" : ""}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -26,4 +26,12 @@ public class CurrentUser {
                 .filter(u -> u.getUsername().equals(p.getUsername()))
                 .orElseThrow(() -> new UnauthorizedException("Oturum geçersiz. Lütfen yeniden giriş yapın."));
     }
+
+    public java.util.Optional<AppUser> find(Authentication auth) {
+        if (auth == null || !(auth.getPrincipal() instanceof AppUserPrincipal p) || p.getId() == null) {
+            return java.util.Optional.empty();
+        }
+        return users.findById(p.getId())
+                .filter(u -> u.getUsername().equals(p.getUsername()));
+    }
 }

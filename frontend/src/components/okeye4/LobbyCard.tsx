@@ -50,8 +50,9 @@ export function LobbyCard({
 
   const hostHandle = (lobby.host.handle || "").toLowerCase().replace(/^@/, "");
   const isActualHost = Boolean(currentHandle && currentHandle === hostHandle);
-  // Kullanıcı ilan sahibi ise ve misafir moduna özellikle geçmediyse host sayılır
-  const isHost = isActualHost && !asGuestView;
+  const isAdmin = Boolean(currentUser?.roles?.includes("ADMIN"));
+  // Kullanıcı ilan sahibi veya Admin ise yönetici sayılır
+  const isHost = (isActualHost || isAdmin) && !asGuestView;
 
   // Masa sandalyeleri dizisi
   const seats = useMemo(() => {
@@ -196,7 +197,7 @@ export function LobbyCard({
 
       {/* Kullanıcı Katılım / Durum Alanı */}
       <div className="mt-3.5 pt-3 border-t border-slate-800/80">
-        {/* İlanı açan kişi: ASLA "Gelebilir miyim?" butonunu görmez, doğrudan Masayı Yönet butonu çıkar */}
+        {/* İlanı açan kişi veya Admin: Masayı Yönet butonu çıkar */}
         {isHost ? (
           <div className="flex items-center justify-between gap-2">
             <button
@@ -204,13 +205,15 @@ export function LobbyCard({
               onClick={() => onManage(lobby)}
               className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-rose-600 hover:opacity-95 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-rose-950/30"
             >
-              <span>👑 Masayı Yönet</span>
+              <span>{isAdmin && !isActualHost ? "🛡️ Admin: Masayı Yönet" : "👑 Masayı Yönet"}</span>
               {pendingCount > 0 ? (
                 <span className="px-2 py-0.5 rounded-full bg-white text-rose-600 text-[10px] font-black animate-pulse">
                   {pendingCount} Yeni İstek
                 </span>
               ) : (
-                <span className="text-[10px] font-mono opacity-80">(Masa Sahibi Sensin)</span>
+                <span className="text-[10px] font-mono opacity-80">
+                  {isAdmin && !isActualHost ? "(Admin Yetkisi)" : "(Masa Sahibi Sensin)"}
+                </span>
               )}
             </button>
           </div>

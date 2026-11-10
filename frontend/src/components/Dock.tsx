@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { avatarEmoji } from "@/lib/avatars";
 import type { AuthUser, FeedFilter } from "@/lib/types";
-import { logout } from "@/lib/client-api";
+import { isAdmin as hasAdminRole, logout } from "@/lib/client-api";
 import { useSecretClick } from "@/hooks/useSecretClick";
 import { useThemePreference } from "@/hooks/useThemePreference";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -13,6 +13,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 const NAV: { filter: FeedFilter; icon: string; label: string; badge?: string }[] = [
   { filter: "all", icon: "⚡", label: "Canlı Akış (Tümü)" },
   { filter: "okeye4", icon: "🀄", label: "Okeye 4. Aranıyor", badge: "CANLI" },
+  { filter: "itiraf", icon: "🤫", label: "Gece İtirafları", badge: "YENİ" },
   { filter: "etkinlik", icon: "⚽", label: "Maç & Canlı Sahne" },
   { filter: "mekan", icon: "🍸", label: "Mekan & Kafe" },
   { filter: "taksi", icon: "🚖", label: "7/24 Taksi" },
@@ -44,18 +45,20 @@ export function Dock({
   /** `undefined` = oturum durumu henüz bilinmiyor (yer tutucu), `null` = oturum yok. */
   me: AuthUser | null | undefined;
 }) {
-  const onLogoClick = useSecretClick(onSecretTrigger);
+  const isAdmin = hasAdminRole(me ?? null);
+  const secretClick = useSecretClick(onSecretTrigger);
+  const onLogoClick = isAdmin ? onSecretTrigger : secretClick;
   const theme = useThemePreference();
   const { unreadCount } = useNotifications();
 
   return (
     <aside className="w-14 sm:w-20 md:w-60 shrink-0 border-r border-slate-800 bg-[#070910] p-1.5 xs:p-2 sm:p-4 flex flex-col justify-between sticky top-0 h-screen z-30">
       <div>
-        {/* Marka / Logo (3 Tık Admin) */}
+        {/* Marka / Logo (Admin için tek tık, diğerleri için 3 Tık) */}
         <div
           className="flex items-center space-x-3 cursor-pointer select-none mb-3 sm:mb-5 px-0.5 sm:px-1"
           onClick={onLogoClick}
-          title="SinopCepte Yönetici Girişi İçin 3 Tık"
+          title={isAdmin ? "Yönetim Panelini Aç (Tek Tık)" : "SinopCepte Yönetici Girişi İçin 3 Tık"}
           data-testid="secret-logo"
         >
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-tr/srgb from-rose-500 via-purple-600 to-cyan-400 flex items-center justify-center font-black text-white text-base sm:text-lg shadow-lg shrink-0">
@@ -68,6 +71,33 @@ export function Dock({
             <span className="block text-[9px] font-mono text-cyan-400 font-bold uppercase">Canlı Şehir Akışı</span>
           </div>
         </div>
+
+        {/* 📖 AYKUT BURAYI OKU (Öne Çıkarılmış Kılavuz) */}
+        <div className="mb-2.5">
+          <Link
+            href="/aykut-burayi-oku"
+            className="w-full p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-linear-to-r from-cyan-950/80 via-blue-950/60 to-purple-950/70 border border-cyan-400/60 hover:border-cyan-300 text-cyan-200 hover:text-white font-black text-xs flex items-center justify-center md:justify-start gap-2.5 transition group shadow-lg shadow-cyan-950/40 animate-pulse hover:animate-none"
+            title="Aykut İçin Proje Durumu & Rehberi"
+          >
+            <span className="text-base sm:text-lg group-hover:scale-115 transition shrink-0">📖</span>
+            <span className="hidden md:inline font-black tracking-tight truncate">Aykut Burayı Oku</span>
+          </Link>
+        </div>
+
+        {/* 🛡️ ADMIN PANELİ BUTONU (Yöneticiler için doğrudan erişim) */}
+        {isAdmin && (
+          <div className="mb-2">
+            <button
+              type="button"
+              onClick={onSecretTrigger}
+              className="w-full p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-linear-to-r from-amber-500/20 via-orange-500/20 to-amber-600/30 border border-amber-500/50 hover:border-amber-400 text-amber-300 font-bold text-xs flex items-center justify-center md:justify-start gap-2.5 transition group shadow-lg shadow-amber-950/20 active:scale-98"
+              title="Yönetim Panelini Aç"
+            >
+              <span className="text-base sm:text-lg group-hover:scale-110 transition shrink-0">🛡️</span>
+              <span className="hidden md:inline font-bold truncate">Yönetim Paneli</span>
+            </button>
+          </div>
+        )}
 
         {/* 🔔 BİLDİRİMLER BUTONU (Öne Çıkarılmış) */}
         <div className="mb-3">

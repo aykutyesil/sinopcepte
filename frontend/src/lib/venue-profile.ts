@@ -299,7 +299,7 @@ export function venueHref(idOrTitle: string, items: readonly Item[] = []): strin
 export function isVenueOwner(userHandle: string | undefined | null, itemId: string): boolean {
   if (!userHandle) return false;
   const h = userHandle.toLowerCase().replace(/^@/, "").trim();
-  if (h === "aykut" || h === "oguzhan") return true;
+  if (h === "aykut" || h === "oskibash" || h === "oguzhan" || h === "admin") return true;
 
   const owners = readStorage<Record<string, string>>(STORAGE_KEYS.OWNERS, {});
   const assigned = owners[itemId] !== undefined ? owners[itemId] : null;
@@ -311,12 +311,13 @@ export function isVenueOwner(userHandle: string | undefined | null, itemId: stri
 export function getOwnedVenues(userHandle: string | undefined | null, items: readonly Item[] = []): VenueProfileData[] {
   if (!userHandle) return [];
   const h = userHandle.toLowerCase().replace(/^@/, "").trim();
-  if (!h) return [];
+  if (!h || h === "aykut" || h === "oskibash" || h === "oguzhan" || h === "admin") return [];
 
   const results: VenueProfileData[] = [];
   items.forEach((item) => {
-    if (isVenueOwner(h, item.id)) {
-      results.push(getVenueProfile(item));
+    const prof = getVenueProfile(item);
+    if (prof.ownerHandle && prof.ownerHandle.toLowerCase().replace(/^@/, "").trim() === h) {
+      results.push(prof);
     }
   });
   return results;

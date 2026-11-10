@@ -17,6 +17,7 @@ export function LoginForm() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -78,15 +79,26 @@ export function LoginForm() {
         </div>
         <div>
           <Label htmlFor="loginPassword">Şifre</Label>
-          <input
-            id="loginPassword"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            className={INPUT}
-            disabled={busy}
-          />
+          <div className="relative">
+            <input
+              id="loginPassword"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              className={`${INPUT} pr-10`}
+              disabled={busy}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition p-1 text-sm select-none"
+              title={showPassword ? "Şifreyi Gizle" : "Şifreyi Göster"}
+              aria-label={showPassword ? "Şifreyi Gizle" : "Şifreyi Göster"}
+            >
+              {showPassword ? "👁️" : "🙈"}
+            </button>
+          </div>
         </div>
         <FormError message={error} />
         <button type="submit" className={PRIMARY_BTN} disabled={busy}>

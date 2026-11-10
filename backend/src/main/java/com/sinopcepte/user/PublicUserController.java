@@ -31,7 +31,7 @@ public class PublicUserController {
     @GetMapping("/{handle}")
     public PublicProfile get(@PathVariable String handle) {
         return users.findByUsername(Handles.normalize(handle))
-                .filter(u -> u.getRole() != Role.ADMIN)
+                .filter(u -> u.getRole() != Role.ADMIN || u.getUsername().equals("aykut") || u.getUsername().equals("oskibash"))
                 .map(u -> PublicProfile.of(u, clock.getZone()))
                 .orElseThrow(() -> new NotFoundException("Kullanıcı bulunamadı"));
     }

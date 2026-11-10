@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { LoadState, Pharmacy } from "@/lib/types";
 import type { WeatherNow } from "@/lib/weather";
 import { weatherIconOf, weatherTemp } from "@/hooks/useWeather";
@@ -37,6 +38,16 @@ export function FeedHeader({
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
+          {/* 📖 Aykut Burayı Oku Hızlı Buton */}
+          <Link
+            href="/aykut-burayi-oku"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-linear-to-r from-cyan-950/80 to-blue-900/60 hover:from-cyan-900 hover:to-blue-800 border border-cyan-400/60 text-cyan-200 hover:text-white font-bold text-xs shadow-md transition active:scale-95"
+            title="Aykut Burayı Oku (Rehber)"
+          >
+            <span>📖</span>
+            <span className="hidden sm:inline text-[11px] font-black">Aykut Oku</span>
+          </Link>
+
           {/* 🔔 Mobilde / Üstte Hızlı Bildirimler Butonu */}
           <button
             type="button"

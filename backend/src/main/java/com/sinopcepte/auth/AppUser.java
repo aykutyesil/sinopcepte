@@ -98,6 +98,7 @@ public class AppUser {
     public void setBadgesJson(String badgesJson) { this.badgesJson = badgesJson; }
     public void setEmail(String email) { this.email = email; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+    public void setRole(Role role) { this.role = role; }
 
     public void acceptKvkk(String version, OffsetDateTime at) {
         this.kvkkVersion = version;

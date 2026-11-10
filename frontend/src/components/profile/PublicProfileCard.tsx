@@ -1,10 +1,29 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { avatarEmoji } from "@/lib/avatars";
 import { formatJoinDate } from "@/lib/format";
-import type { Item, PublicProfile } from "@/lib/types";
+import type { Item, PublicProfile, AuthUser } from "@/lib/types";
 import { instagramUrl, validateInstagram } from "@/lib/validation";
 import { getOwnedVenues } from "@/lib/venue-profile";
+import { fetchMe, isAdmin as checkIsAdmin } from "@/lib/client-api";
 import { CARD } from "../auth/ui";
+
+interface AdminUserDetail {
+  id: number;
+  username: string;
+  email: string | null;
+  phone: string | null;
+  role: string;
+  checkinVisibility: string;
+  anonymousMode: boolean;
+  createdAt: string;
+  checkinCount: number;
+  lobbyCount: number;
+  confessionCount: number;
+  ownedVenues: string[];
+}
 
 /** Rozet şekli N8'de belirlenecek: dize ya da `{label|name|title, icon|emoji}` nesnesi savunmacı okunur. */
 function badgeView(b: unknown, i: number): { key: string; icon: string | null; label: string } | null {
@@ -29,6 +48,28 @@ export function PublicProfileCard({
   profile: PublicProfile;
   items?: readonly Item[];
 }) {
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [adminDetail, setAdminDetail] = useState<AdminUserDetail | null>(null);
+
+  useEffect(() => {
+    fetchMe()
+      .then((u) => {
+        setCurrentUser(u);
+        if (checkIsAdmin(u)) {
+          fetch("/api/admin/users")
+            .then((r) => (r.ok ? r.json() : []))
+            .then((allUsers: AdminUserDetail[]) => {
+              const match = allUsers.find(
+                (x) => x.username.toLowerCase() === profile.handle.toLowerCase()
+              );
+              if (match) setAdminDetail(match);
+            })
+            .catch(() => {});
+        }
+      })
+      .catch(() => {});
+  }, [profile.handle]);
+
   const joined = formatJoinDate(profile.createdAt);
   const ig = profile.instagram && !validateInstagram(profile.instagram) ? profile.instagram : null;
   const badges = (Array.isArray(profile.badges) ? profile.badges : [])
@@ -36,9 +77,96 @@ export function PublicProfileCard({
     .filter((b): b is NonNullable<typeof b> => b !== null);
 
   const ownedVenues = getOwnedVenues(profile.handle, items);
+  const isAdminViewer = checkIsAdmin(currentUser);
 
   return (
     <div className="space-y-4">
+      {/* 🛡️ ADMIN DENETİM KARTI (Sadece Admin Görür - Tanrı Modu) */}
+      {isAdminViewer && (
+        <section className="p-4 sm:p-5 rounded-2xl bg-linear-to-br from-amber-950/40 via-slate-900 to-[#080b18] border-2 border-amber-500/60 shadow-xl shadow-amber-950/30 space-y-3">
+          <div className="flex items-center justify-between border-b border-amber-500/30 pb-2.5">
+            <div className="flex items-center gap-2">
+              <span className="text-xl animate-pulse">🛡️</span>
+              <div>
+                <h2 className="text-xs sm:text-sm font-black text-amber-300 font-display uppercase tracking-wide">
+                  Admin Denetim Kartı (Gizli Bilgiler)
+                </h2>
+                <p className="text-[10px] text-amber-200/70">
+                  Bu kutuyu sitede sadece sen ve sistem yöneticileri görebilir.
+                </p>
+              </div>
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono text-[10px] font-bold border border-amber-500/40">
+              GOD MODE
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs font-mono">
+            <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
+              <span className="text-[10px] text-slate-400 block">E-Posta Adresi:</span>
+              <span className="text-white font-bold break-all">
+                {adminDetail?.email || "Kayıtlı değil"}
+              </span>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
+              <span className="text-[10px] text-slate-400 block">Telefon Numarası:</span>
+              {adminDetail?.phone ? (
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`tel:${adminDetail.phone}`}
+                    className="text-emerald-400 hover:underline font-bold"
+                  >
+                    📞 {adminDetail.phone}
+                  </a>
+                  <a
+                    href={`https://wa.me/${adminDetail.phone.replace(/[^0-9]/g, "")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-1.5 py-0.5 rounded bg-emerald-950 border border-emerald-500/40 text-[10px] text-emerald-300 hover:bg-emerald-900"
+                  >
+                    💬 WhatsApp
+                  </a>
+                </div>
+              ) : (
+                <span className="text-slate-500">Kayıtlı değil</span>
+              )}
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
+              <span className="text-[10px] text-slate-400 block">Rol & Yetki:</span>
+              <span className="text-amber-400 font-bold">
+                {adminDetail?.role === "ADMIN" ? "🛡️ SİSTEM YÖNETİCİSİ (ADMIN)" : "👤 Standart Üye (USER)"}
+              </span>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
+              <span className="text-[10px] text-slate-400 block">Gizlilik Tercihleri:</span>
+              <span className="text-slate-200">
+                Check-in: <strong className="text-cyan-400">{adminDetail?.checkinVisibility || "PUBLIC"}</strong> | Anonim Mod: <strong className={adminDetail?.anonymousMode ? "text-rose-400" : "text-slate-400"}>{adminDetail?.anonymousMode ? "AÇIK" : "KAPALI"}</strong>
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-around p-2 rounded-xl bg-slate-950/60 border border-slate-800 text-center text-xs">
+            <div>
+              <span className="text-[10px] text-slate-400 block">Toplam Check-in</span>
+              <strong className="text-cyan-400 font-mono text-sm">{adminDetail?.checkinCount ?? 0}</strong>
+            </div>
+            <div className="w-px h-6 bg-slate-800" />
+            <div>
+              <span className="text-[10px] text-slate-400 block">Açtığı Masa (Okeye 4)</span>
+              <strong className="text-amber-400 font-mono text-sm">{adminDetail?.lobbyCount ?? 0}</strong>
+            </div>
+            <div className="w-px h-6 bg-slate-800" />
+            <div>
+              <span className="text-[10px] text-slate-400 block">Yazdığı İtiraf</span>
+              <strong className="text-rose-400 font-mono text-sm">{adminDetail?.confessionCount ?? 0}</strong>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className={CARD}>
         <div className="flex flex-col items-center text-center">
           <div className="story-ring">

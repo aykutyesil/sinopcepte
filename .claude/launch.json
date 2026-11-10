@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "legacy-tasarim4",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "5500", "--directory", "legacy/tasarim4-canli-radar-feed"],
+      "port": 5500
+    }
+  ]
+}

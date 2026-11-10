@@ -8,14 +8,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Açılışta hiç ADMIN yoksa ADMIN_USERNAME / ADMIN_PASSWORD ile bir tane oluşturur.
+ * Açılışta ADMIN_USERNAME / ADMIN_PASSWORD ile yapılandırılmış admin yoksa oluşturur.
  * Değişkenler yoksa admin oluşturmaz ve uyarı loglar.
  */
 @Component
+@Order(1)
 public class AdminBootstrap implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(AdminBootstrap.class);
@@ -35,19 +37,17 @@ public class AdminBootstrap implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        if (users.existsByRole(Role.ADMIN)) {
-            return;
-        }
         // Rumuzlar küçük harfle saklanır (V10 kısıtı); giriş de küçültüp arar.
         String username = props.username() == null ? "" : Handles.normalize(props.username());
         String password = props.password() == null ? "" : props.password();
         if (username.isEmpty() || password.isEmpty()) {
-            log.warn("Hiç ADMIN kullanıcı yok ve ADMIN_USERNAME / ADMIN_PASSWORD tanımlı değil; admin oluşturulmadı. "
-                    + "Admin paneline giriş yapılamaz.");
+            if (!users.existsByRole(Role.ADMIN)) {
+                log.warn("Hiç ADMIN kullanıcı yok ve ADMIN_USERNAME / ADMIN_PASSWORD tanımlı değil; admin oluşturulmadı. "
+                        + "Admin paneline giriş yapılamaz.");
+            }
             return;
         }
         if (users.existsByUsername(username)) {
-            log.warn("ADMIN_USERNAME='{}' zaten ADMIN olmayan bir kullanıcıya ait; admin oluşturulmadı.", username);
             return;
         }
         if (password.length() < 12) {

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,5 +44,12 @@ public class CheckinController {
         AppUser user = currentUser.require(auth);
         VenueCheckin saved = checkinService.checkIn(user, req.itemId(), req.displayName(), req.avatar(), req.note(), req.mood());
         return ResponseEntity.ok(saved);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCheckin(@PathVariable("id") String id, Authentication auth) {
+        AppUser user = currentUser.require(auth);
+        checkinService.deleteCheckin(user, id);
+        return ResponseEntity.noContent().build();
     }
 }
