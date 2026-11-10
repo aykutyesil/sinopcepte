@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   CATEGORY_INFO,
   createLobby,
@@ -56,6 +57,7 @@ export function CreateLobbyModal({
   useEffect(() => {
     if (!isOpen) return;
 
+    let alive = true;
     const fillUser = (u: AuthUser) => {
       setLoggedInUser(u);
       const h = (u.handle || u.username || "").replace(/^@/, "");
@@ -64,7 +66,7 @@ export function CreateLobbyModal({
       if (u.avatar) {
         setHostAvatar(avatarEmoji(u.avatar));
       }
-      const memberPhone = getMemberPhone(h) || localStorage.getItem("sinopcepte_phone") || "";
+      const memberPhone = getMemberPhone(h) || "";
       if (memberPhone) {
         setHostPhone(memberPhone);
       }
@@ -74,30 +76,37 @@ export function CreateLobbyModal({
       fillUser(currentUser);
     } else {
       fetchMe().then((u) => {
+        if (!alive) return;
         if (u && (u.handle || u.username)) {
           fillUser(u);
         } else {
-          // Oturum yoksa son kullanılan yerel telefon veya adı al
-          const savedPhone = localStorage.getItem("sinopcepte_phone");
-          if (savedPhone) setHostPhone(savedPhone);
+          setLoggedInUser(null);
         }
+      }).catch(() => {
+        if (alive) setLoggedInUser(null);
       });
     }
 
-    const savedPhone = localStorage.getItem("sinopcepte_phone");
-    if (savedPhone) setHostPhone(savedPhone);
+    return () => {
+      alive = false;
+    };
   }, [isOpen, currentUser]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!loggedInUser || !(loggedInUser.handle || loggedInUser.username)) {
+      return;
+    }
+
     const finalVenue = venue === "Diğer" ? customVenue.trim() || "Sinop Merkez" : venue;
     const finalTitle =
       title.trim() ||
       `${finalVenue}'da ${CATEGORY_INFO[category].label} için ${neededCount} kişi aranıyor`;
 
-    const cleanHandle = hostHandle.trim().replace(/^@/, "") || (loggedInUser?.handle || loggedInUser?.username) || "sinoplu";
+    const userHandle = (loggedInUser.handle || loggedInUser.username).replace(/^@/, "");
+    const cleanHandle = hostHandle.trim().replace(/^@/, "") || userHandle;
     const cleanPhone = hostPhone.trim();
 
     if (cleanPhone) {
@@ -164,7 +173,38 @@ export function CreateLobbyModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+        {!loggedInUser ? (
+          <div className="py-8 text-center space-y-4">
+            <div className="w-16 h-16 rounded-3xl bg-amber-500/20 border border-amber-500/40 text-amber-400 text-3xl flex items-center justify-center mx-auto">
+              🔒
+            </div>
+            <div>
+              <h4 className="text-base font-black text-white">
+                İlan Paylaşmak İçin Giriş Yapmalısınız
+              </h4>
+              <p className="text-xs text-slate-300 mt-1.5 max-w-xs mx-auto">
+                Masa ilanı açmak ve oyuncu toplamak için SinopCepte hesabınıza giriş yapın.
+              </p>
+            </div>
+            <div className="pt-2 flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition"
+              >
+                Vazgeç
+              </button>
+              <Link
+                href="/giris"
+                className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 hover:opacity-95 text-white font-bold text-xs transition shadow-lg flex items-center gap-1.5"
+              >
+                <span>Giriş Yap</span>
+                <span>→</span>
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           {/* Kategori Seçimi */}
           <div>
             <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-2">
@@ -410,6 +450,7 @@ export function CreateLobbyModal({
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );

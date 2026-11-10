@@ -9,6 +9,7 @@ import {
   type Lobby,
 } from "@/lib/okeye4";
 import type { AuthUser } from "@/lib/types";
+import { venueHref } from "@/lib/venue-profile";
 
 export function LobbyCard({
   lobby,
@@ -25,7 +26,8 @@ export function LobbyCard({
   const [asGuestView, setAsGuestView] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const cat = CATEGORY_INFO[lobby.category];
@@ -78,9 +80,13 @@ export function LobbyCard({
             <span>{cat.label}</span>
           </span>
 
-          <span className="text-[10px] font-mono text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded-full border border-slate-800">
+          <Link
+            href={venueHref(lobby.venue)}
+            className="text-[10px] font-mono text-slate-300 hover:text-amber-300 hover:underline bg-slate-900/80 px-2 py-0.5 rounded-full border border-slate-800 transition"
+            title={`${lobby.venue} mekan profili ve menüsü`}
+          >
             📍 {lobby.venue}
-          </span>
+          </Link>
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">

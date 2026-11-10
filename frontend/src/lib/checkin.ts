@@ -1,4 +1,4 @@
-﻿// SinopCepte Swarm Mantığıyla Check-In Sistemi
+﻿// SinopCepte Swarm Mantığıyla Check-In Sistemi (PostgreSQL & Backend API Entegre)
 
 export interface CheckInUser {
   id: string;
@@ -23,74 +23,22 @@ export interface VenueCheckInState {
   activeUsers: CheckInUser[];
 }
 
-// Başlangıç Sinop Mekanları Swarm Verisi
-export const INITIAL_CHECKINS: Record<string, VenueCheckInState> = {
-  "m-1": { // Mathiday's Social
-    venueId: "m-1",
-    totalVisits: 142,
-    mayor: {
-      handle: "burkay",
-      displayName: "Burkay Bahadır",
-      avatar: "🎧",
-      checkInCount: 19,
-    },
-    activeUsers: [
-      { id: "u-1", handle: "deniz_sn", displayName: "Deniz", avatar: "🌊", note: "Liman terasta kahve keyfi", timestamp: Date.now() - 15 * 60 * 1000 },
-      { id: "u-2", handle: "gamze99", displayName: "Gamze", avatar: "✨", note: "DJ setini bekliyoruz", timestamp: Date.now() - 34 * 60 * 1000 },
-      { id: "u-3", handle: "mert_k", displayName: "Mert", avatar: "🎸", note: "Kokteyller harika", timestamp: Date.now() - 52 * 60 * 1000 },
-      { id: "u-4", handle: "selin_a", displayName: "Selin", avatar: "☕", timestamp: Date.now() - 70 * 60 * 1000 },
-    ],
-  },
-  "m-2": { // Nihavent Restaurant Pub
-    venueId: "m-2",
-    totalVisits: 285,
-    mayor: {
-      handle: "aykut",
-      displayName: "Aykut Yeşil",
-      avatar: "👑",
-      checkInCount: 24,
-    },
-    activeUsers: [
-      { id: "u-5", handle: "aykut", displayName: "Aykut", avatar: "👑", note: "Galatasaray maçını dev ekranda izliyoruz!", timestamp: Date.now() - 20 * 60 * 1000 },
-      { id: "u-6", handle: "can_s", displayName: "Can", avatar: "⚽", note: "Pub tabağı söyledik", timestamp: Date.now() - 40 * 60 * 1000 },
-      { id: "u-7", handle: "onur_57", displayName: "Onur", avatar: "🍺", note: "Fıçı bira soğuk", timestamp: Date.now() - 55 * 60 * 1000 },
-      { id: "u-8", handle: "tolga_sn", displayName: "Tolga", avatar: "🎯", timestamp: Date.now() - 80 * 60 * 1000 },
-      { id: "u-9", handle: "irem_y", displayName: "İrem", avatar: "🍕", timestamp: Date.now() - 95 * 60 * 1000 },
-    ],
-  },
-  "m-3": { // Cem's Burger
-    venueId: "m-3",
-    totalVisits: 98,
-    mayor: {
-      handle: "eren_k",
-      displayName: "Eren Kaya",
-      avatar: "🍔",
-      checkInCount: 14,
-    },
-    activeUsers: [
-      { id: "u-10", handle: "eren_k", displayName: "Eren", avatar: "🍔", note: "Trüflü burger efsane", timestamp: Date.now() - 25 * 60 * 1000 },
-      { id: "u-11", handle: "berke_m", displayName: "Berke", avatar: "🍟", timestamp: Date.now() - 45 * 60 * 1000 },
-      { id: "u-12", handle: "esra_s", displayName: "Esra", avatar: "🥤", note: "Ders çıkışı yemek molası", timestamp: Date.now() - 60 * 60 * 1000 },
-    ],
-  },
-  "m-4": { // Porta Marina
-    venueId: "m-4",
-    totalVisits: 176,
-    mayor: {
-      handle: "melis_t",
-      displayName: "Melis Tan",
-      avatar: "⛵",
-      checkInCount: 16,
-    },
-    activeUsers: [
-      { id: "u-13", handle: "melis_t", displayName: "Melis", avatar: "⛵", note: "Marina gün batımı", timestamp: Date.now() - 30 * 60 * 1000 },
-      { id: "u-14", handle: "kerem_57", displayName: "Kerem", avatar: "🍷", timestamp: Date.now() - 65 * 60 * 1000 },
-    ],
-  },
-};
+export interface BackendCheckin {
+  id: string;
+  itemId: string;
+  handle: string;
+  displayName: string;
+  avatar: string;
+  note?: string | null;
+  mood?: string | null;
+  checkedInAt: string;
+}
 
 const STORAGE_KEY = "sinopcepte_swarm_v1";
 const MY_CHECKIN_KEY = "sinopcepte_my_active_checkin";
+
+let inMemoryState: Record<string, VenueCheckInState> = {};
+let isFetching = false;
 
 export interface MyActiveCheckIn {
   venueId: string;
@@ -101,27 +49,168 @@ export interface MyActiveCheckIn {
   timestamp: number;
 }
 
-export function getCheckInState(): Record<string, VenueCheckInState> {
-  if (typeof window === "undefined") return INITIAL_CHECKINS;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_CHECKINS));
-      return INITIAL_CHECKINS;
-    }
-    return JSON.parse(raw);
-  } catch {
-    return INITIAL_CHECKINS;
+export function transformBackendCheckins(list: BackendCheckin[]): Record<string, VenueCheckInState> {
+  const grouped: Record<string, BackendCheckin[]> = {};
+  for (const c of list) {
+    if (!grouped[c.itemId]) grouped[c.itemId] = [];
+    grouped[c.itemId].push(c);
   }
+
+  const result: Record<string, VenueCheckInState> = {};
+  for (const [venueId, items] of Object.entries(grouped)) {
+    // Mayor hesapla
+    const counts: Record<string, { count: number; displayName: string; avatar: string }> = {};
+    for (const it of items) {
+      if (!counts[it.handle]) {
+        counts[it.handle] = { count: 0, displayName: it.displayName, avatar: it.avatar };
+      }
+      counts[it.handle].count++;
+    }
+
+    let topHandle = "";
+    let topCount = 0;
+    for (const [h, data] of Object.entries(counts)) {
+      if (data.count > topCount) {
+        topCount = data.count;
+        topHandle = h;
+      }
+    }
+
+    const mayor: MayorInfo = topHandle
+      ? {
+          handle: topHandle,
+          displayName: counts[topHandle].displayName,
+          avatar: counts[topHandle].avatar,
+          checkInCount: topCount,
+        }
+      : {
+          handle: "sinoplu",
+          displayName: "Sinoplu",
+          avatar: "📍",
+          checkInCount: 1,
+        };
+
+    const activeUsers: CheckInUser[] = items.map((it) => ({
+      id: it.id,
+      handle: it.handle,
+      displayName: it.displayName,
+      avatar: it.avatar,
+      note: it.note || undefined,
+      timestamp: new Date(it.checkedInAt).getTime(),
+    }));
+
+    result[venueId] = {
+      venueId,
+      totalVisits: items.length,
+      mayor,
+      activeUsers,
+    };
+  }
+
+  return result;
+}
+
+export async function fetchCheckinsFromBackend(): Promise<Record<string, VenueCheckInState>> {
+  if (typeof window === "undefined" || !window.location?.origin || process.env.NODE_ENV === "test" || isFetching) {
+    return inMemoryState;
+  }
+  isFetching = true;
+  try {
+    const res = await fetch("/api/checkins", { cache: "no-store", headers: { Accept: "application/json" } });
+    if (res.ok) {
+      const data: BackendCheckin[] = await res.json();
+      const transformed = transformBackendCheckins(data);
+      inMemoryState = transformed;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(transformed));
+      } catch {}
+      window.dispatchEvent(new CustomEvent("sinopcepte:checkins-updated", { detail: transformed }));
+      return transformed;
+    }
+  } catch (err) {
+    console.warn("Backend checkin verisi çekilemedi:", err);
+  } finally {
+    isFetching = false;
+  }
+  return inMemoryState;
+}
+
+export function getCheckInState(): Record<string, VenueCheckInState> {
+  if (typeof window === "undefined") return inMemoryState;
+
+  if (Object.keys(inMemoryState).length === 0) {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) inMemoryState = JSON.parse(raw);
+    } catch {}
+    // Arka planda backend'den taze veriyi çek
+    fetchCheckinsFromBackend().catch(() => {});
+  }
+  return inMemoryState;
+}
+
+export async function submitCheckInToBackend(
+  itemId: string,
+  displayName: string,
+  avatar: string,
+  note?: string,
+  mood?: string
+): Promise<BackendCheckin | null> {
+  try {
+    // CSRF token al
+    let token: string | null = null;
+    const prefix = "XSRF-TOKEN=";
+    for (const part of document.cookie.split(";")) {
+      const c = part.trim();
+      if (c.startsWith(prefix)) {
+        token = decodeURIComponent(c.slice(prefix.length));
+        break;
+      }
+    }
+    if (!token) {
+      await fetch("/api/auth/csrf", { credentials: "same-origin", cache: "no-store" });
+      for (const part of document.cookie.split(";")) {
+        const c = part.trim();
+        if (c.startsWith(prefix)) {
+          token = decodeURIComponent(c.slice(prefix.length));
+          break;
+        }
+      }
+    }
+
+    const headers: Record<string, string> = {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    };
+    if (token) headers["X-XSRF-TOKEN"] = token;
+
+    const res = await fetch("/api/checkins", {
+      method: "POST",
+      credentials: "same-origin",
+      headers,
+      body: JSON.stringify({ itemId, displayName, avatar, note, mood }),
+    });
+
+    if (res.ok) {
+      const saved: BackendCheckin = await res.json();
+      await fetchCheckinsFromBackend();
+      return saved;
+    }
+  } catch (e) {
+    console.error("Check-in gönderilemedi:", e);
+  }
+  return null;
 }
 
 export function saveCheckInState(data: Record<string, VenueCheckInState>) {
+  inMemoryState = data;
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch (e) {
     console.error("Check-in kaydedilemedi:", e);
   }
+  window.dispatchEvent(new CustomEvent("sinopcepte:checkins-updated", { detail: data }));
 }
 
 export function getMyActiveCheckIn(): MyActiveCheckIn | null {
@@ -130,7 +219,6 @@ export function getMyActiveCheckIn(): MyActiveCheckIn | null {
     const raw = localStorage.getItem(MY_CHECKIN_KEY);
     if (!raw) return null;
     const item: MyActiveCheckIn = JSON.parse(raw);
-    // 3 saatten eskiyse düşür
     if (Date.now() - item.timestamp > 3 * 60 * 60 * 1000) {
       clearMyActiveCheckIn();
       return null;

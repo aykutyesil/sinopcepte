@@ -6,6 +6,7 @@ import {
   respondToRequest,
   type Lobby,
 } from "@/lib/okeye4";
+import { venueHref } from "@/lib/venue-profile";
 
 export function HostManageModal({
   lobby,
@@ -82,7 +83,13 @@ export function HostManageModal({
 
           <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
             <span>
-              Mekan: <strong className="text-slate-200">{lobby.venue}</strong>
+              Mekan:{" "}
+              <Link
+                href={venueHref(lobby.venue)}
+                className="font-bold text-amber-300 hover:underline"
+              >
+                {lobby.venue}
+              </Link>
             </span>
             <span>
               Doluluk: <strong className="text-amber-400">{lobby.currentCount}/{lobby.totalCount} Kişi</strong>

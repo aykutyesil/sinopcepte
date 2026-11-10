@@ -16,7 +16,8 @@ import {
   updateOwnProfile,
 } from "@/lib/client-api";
 import { formatJoinDate } from "@/lib/format";
-import type { CheckinVisibility, OwnProfile } from "@/lib/types";
+import type { CheckinVisibility, Item, OwnProfile } from "@/lib/types";
+import { getOwnedVenues, type VenueProfileData, VENUE_UPDATED_EVENT } from "@/lib/venue-profile";
 import {
   BIO_MAX,
   bioLength,
@@ -83,6 +84,7 @@ export function ProfileEditor() {
   return (
     <div className="space-y-4">
       <ProfileHeader profile={profile} admin={admin} />
+      <OwnedVenuesSection handle={profile.handle} />
       <ProfileForm
         // Form ilk yüklemede profilden başlar; kaydetmeden sonra sunucunun döndürdüğü değerlerle güncellenir.
         key={profile.handle}
@@ -93,6 +95,68 @@ export function ProfileEditor() {
       <PasswordSection onSessionLost={onSessionLost} />
       <DeleteSection admin={admin} onDeleted={() => { window.location.href = "/"; }} onSessionLost={onSessionLost} />
     </div>
+  );
+}
+
+function OwnedVenuesSection({ handle }: { handle: string }) {
+  const [venues, setVenues] = useState<VenueProfileData[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    const loadVenues = () => {
+      fetch("/api/items")
+        .then((r) => (r.ok ? r.json() : []))
+        .then((items: Item[]) => {
+          if (alive) setVenues(getOwnedVenues(handle, items));
+        })
+        .catch(() => {});
+    };
+    loadVenues();
+    const onUpdate = () => loadVenues();
+    window.addEventListener(VENUE_UPDATED_EVENT, onUpdate);
+    return () => {
+      alive = false;
+      window.removeEventListener(VENUE_UPDATED_EVENT, onUpdate);
+    };
+  }, [handle]);
+
+  if (venues.length === 0) return null;
+
+  return (
+    <section className={CARD}>
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-xl">🏪</span>
+        <div>
+          <h2 className="text-base font-black text-white font-display">Patronu Olduğunuz Mekanlar ({venues.length})</h2>
+          <p className="text-[11px] text-amber-300 font-mono">Menü, fotoğraf ve etkinlikleri yönetme yetkiniz var</p>
+        </div>
+      </div>
+      <div className="space-y-2.5">
+        {venues.map((v) => (
+          <div
+            key={v.itemId}
+            className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-slate-900 to-[#080b18] border border-amber-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md"
+          >
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-white truncate">{v.title}</span>
+                <span className="text-[10px] font-mono text-cyan-400 font-bold bg-cyan-950/60 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                  {v.badge}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 truncate mt-1">📍 {v.location}</p>
+            </div>
+            <Link
+              href={`/mekan/${v.itemId}`}
+              className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition self-start sm:self-auto shrink-0 shadow flex items-center gap-1.5"
+            >
+              <span>⚙️ Mekanı Yönet & Düzenle</span>
+              <span>→</span>
+            </Link>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

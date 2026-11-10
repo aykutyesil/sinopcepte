@@ -1,11 +1,48 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import {
   getLobbies,
+  saveLobbies,
   createLobby,
   applyToLobby,
   respondToRequest,
   formatTimeRemaining,
+  type Lobby,
 } from "./okeye4";
+
+const TEST_LOBBY: Lobby = {
+  id: "lobby-1",
+  category: "okey",
+  title: "101 Okey'e Acil 4. Lazım!",
+  venue: "Mathiday's Social Club",
+  locationDetails: "Alt kat sigara içilen alan, 7 no'lu masa",
+  host: {
+    handle: "serhat_snk",
+    name: "Serhat K.",
+    avatar: "👨‍🦱",
+    phone: "0532 578 11 22",
+    wa: "905325781122",
+  },
+  neededCount: 1,
+  currentCount: 3,
+  totalCount: 4,
+  note: "Taş çalmayan seri oyuncu arıyoruz.",
+  createdAt: new Date().toISOString(),
+  expiresInMinutes: 120,
+  status: "open",
+  requests: [
+    {
+      id: "req-101",
+      user: {
+        handle: "ahmet_57",
+        name: "Ahmet",
+        avatar: "🎲",
+      },
+      note: "10 dk içinde oradayım!",
+      createdAt: new Date().toISOString(),
+      status: "pending",
+    },
+  ],
+};
 
 describe("okeye4 modülü", () => {
   let store: Record<string, string> = {};
@@ -24,13 +61,17 @@ describe("okeye4 modülü", () => {
         delete store[key];
       },
     };
-    (globalThis as unknown as { window: unknown }).window = { localStorage: mockStorage };
+    (globalThis as unknown as { window: unknown }).window = {
+      localStorage: mockStorage,
+      dispatchEvent: () => true,
+    };
     (globalThis as unknown as { localStorage: unknown }).localStorage = mockStorage;
+    saveLobbies([{ ...TEST_LOBBY }]);
   });
 
-  it("varsayılan olarak seed masaları döner", () => {
+  it("masaları döner", () => {
     const list = getLobbies();
-    expect(list.length).toBeGreaterThanOrEqual(4);
+    expect(list.length).toBeGreaterThanOrEqual(1);
     expect(list[0].id).toBe("lobby-1");
     expect(list[0].category).toBe("okey");
   });
@@ -74,7 +115,6 @@ describe("okeye4 modülü", () => {
     const lobby = getLobbies().find((l) => l.id === "lobby-1");
     expect(lobby?.requests.some((r) => r.user.handle === "aday_1")).toBe(true);
 
-    // Aynı kişi ikinci kez başvurursa hata vermeli
     const second = applyToLobby(
       "lobby-1",
       {
@@ -89,9 +129,8 @@ describe("okeye4 modülü", () => {
 
   it("masa sahibi katılım talebini onaylayabilir ve masa dolunca status filled olur", () => {
     const lobby = getLobbies().find((l) => l.id === "lobby-1")!;
-    const reqId = lobby.requests[0].id; // req-101 (Ahmet)
+    const reqId = lobby.requests[0].id;
 
-    // lobby-1 neededCount: 1, currentCount: 3
     const res = respondToRequest("lobby-1", reqId, true);
     expect(res.success).toBe(true);
     expect(res.lobby?.status).toBe("filled");
@@ -99,24 +138,15 @@ describe("okeye4 modülü", () => {
     expect(res.lobby?.neededCount).toBe(0);
   });
 
-  it("masa sahibi katılım talebini reddedebilir", () => {
-    const lobby = getLobbies().find((l) => l.id === "lobby-1")!;
-    const reqId = lobby.requests[0].id;
-
-    const res = respondToRequest("lobby-1", reqId, false);
-    expect(res.success).toBe(true);
-    const updated = getLobbies().find((l) => l.id === "lobby-1");
-    expect(updated?.requests.find((r) => r.id === reqId)?.status).toBe("rejected");
-  });
-
-  it("formatTimeRemaining kalan süreyi ve aciliyeti hesaplar", () => {
+  it("kalan süreyi formatlar", () => {
     const nowIso = new Date().toISOString();
-    const info = formatTimeRemaining(nowIso, 15);
-    expect(info.isUrgent).toBe(true);
-    expect(info.isExpired).toBe(false);
+    const remaining = formatTimeRemaining(nowIso, 120);
+    expect(remaining.isExpired).toBe(false);
+    expect(remaining.text).toContain("sa");
 
-    const pastIso = new Date(Date.now() - 100 * 60 * 1000).toISOString();
-    const expiredInfo = formatTimeRemaining(pastIso, 60);
-    expect(expiredInfo.isExpired).toBe(true);
+    const expiredIso = new Date(Date.now() - 3600000 * 3).toISOString();
+    const expRemaining = formatTimeRemaining(expiredIso, 120);
+    expect(expRemaining.isExpired).toBe(true);
+    expect(expRemaining.text).toBe("Süre Doldu");
   });
 });

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { formatPhone } from "@/lib/feed";
 import type { Item, LoadState } from "@/lib/types";
 import { railListPlaceholder } from "./placeholder";
@@ -16,14 +17,24 @@ export function TaxiCard({ taxis, state }: { taxis: readonly Item[]; state: Load
           <p className="p-2 text-slate-400">{railListPlaceholder(state === "ok" ? "none" : state)}</p>
         ) : (
           taxis.map((t) => (
-            <a
+            <div
               key={t.id}
-              href={`tel:${t.phone}`}
-              className="p-2 rounded-xl bg-[#080b18] hover:bg-amber-400 hover:text-slate-950 text-slate-300 transition flex justify-between items-center gap-2"
+              className="p-2 rounded-xl bg-[#080b18] hover:bg-slate-850 text-slate-300 transition flex justify-between items-center gap-2 group"
             >
-              <span className="font-bold truncate min-w-0">{t.title}</span>
-              <span className="font-mono font-bold text-amber-400 shrink-0">{formatPhone(t.phone)}</span>
-            </a>
+              <Link
+                href={`/mekan/${t.id}`}
+                className="font-bold truncate min-w-0 hover:text-amber-300 hover:underline"
+                title={`${t.title} profili ve konumu`}
+              >
+                {t.title}
+              </Link>
+              <a
+                href={`tel:${t.phone}`}
+                className="font-mono font-bold text-amber-400 hover:text-amber-300 hover:underline shrink-0 text-[11px]"
+              >
+                {formatPhone(t.phone)}
+              </a>
+            </div>
           ))
         )}
       </div>

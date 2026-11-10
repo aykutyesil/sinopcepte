@@ -11,6 +11,7 @@ import {
   getCheckInState,
   getMyActiveCheckIn,
   saveCheckInState,
+  submitCheckInToBackend,
   setMyActiveCheckIn,
   clearMyActiveCheckIn,
   type VenueCheckInState,
@@ -62,6 +63,7 @@ export function CheckInModal({
 
   // Oturum açan kullanıcının bilgilerini otomatik doldur
   useEffect(() => {
+    let alive = true;
     const applyUser = (me: AuthUser) => {
       setLoggedInUser(me);
       const userHandle = (me.handle || me.username || "").replace(/^@/, "");
@@ -78,36 +80,38 @@ export function CheckInModal({
       applyUser(currentUser);
     } else {
       fetchMe().then((me) => {
+        if (!alive) return;
         if (me && (me.handle || me.username)) {
           applyUser(me);
         } else {
-          const savedHandle = localStorage.getItem("sinopcepte_my_handle");
-          if (savedHandle) {
-            setHandle(savedHandle);
-            setDisplayName(savedHandle);
-          }
+          setLoggedInUser(null);
         }
+      }).catch(() => {
+        if (alive) setLoggedInUser(null);
       });
     }
+
+    return () => {
+      alive = false;
+    };
   }, [currentUser]);
 
   const handleCheckIn = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const rawHandle = handle.trim().replace(/^@/, "");
+    if (!loggedInUser || !(loggedInUser.handle || loggedInUser.username)) {
+      return;
+    }
+
+    const userHandle = (loggedInUser.handle || loggedInUser.username).replace(/^@/, "");
+    const rawHandle = handle.trim().replace(/^@/, "") || userHandle;
     const finalHandle = isAnonymous
       ? "gizli_marti_" + Math.floor(100 + Math.random() * 900)
-      : rawHandle || (loggedInUser?.handle || loggedInUser?.username || "").replace(/^@/, "") || "sinoplu_" + Math.floor(1000 + Math.random() * 9000);
+      : rawHandle;
 
     const finalName = isAnonymous
       ? "Gizli Sinoplu 🤫"
-      : displayName.trim() || rawHandle || (loggedInUser?.handle || loggedInUser?.username || "").replace(/^@/, "") || "Sinoplu";
-
-    if (!isAnonymous && rawHandle) {
-      try {
-        localStorage.setItem("sinopcepte_my_handle", rawHandle);
-      } catch {}
-    }
+      : displayName.trim() || rawHandle;
 
     const newUser: CheckInUser = {
       id: "u-" + Date.now(),
@@ -152,6 +156,7 @@ export function CheckInModal({
 
     saveCheckInState(nextAll);
     setAllStates(nextAll);
+    submitCheckInToBackend(item.id, finalHandle, avatar, note || undefined);
 
     // Kendi aktif mekanımı kaydet
     setMyActiveCheckIn({
@@ -225,9 +230,18 @@ export function CheckInModal({
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xl">📍</span>
-            <h3 className="text-lg font-black text-white font-display truncate">{item.title}</h3>
+            <h3 className="text-lg font-black text-white font-display truncate">
+              <Link href={`/mekan/${item.id}`} className="hover:underline hover:text-cyan-300 transition" title="Mekan profili & menü">
+                {item.title}
+              </Link>
+            </h3>
           </div>
-          <p className="text-xs text-slate-400">{item.location}</p>
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <span>{item.location}</span>
+            <Link href={`/mekan/${item.id}`} className="text-[10px] font-bold text-cyan-400 hover:underline">
+              Mekan Sayfası →
+            </Link>
+          </div>
         </div>
 
         {/* Başarı Bildirimi */}
@@ -362,6 +376,27 @@ export function CheckInModal({
               >
                 Çıkış Yap
               </button>
+            </div>
+          ) : !loggedInUser ? (
+            <div className="p-4 rounded-2xl bg-[#070914] border border-cyan-500/30 text-center space-y-2.5">
+              <div className="text-2xl">📍</div>
+              <div>
+                <p className="text-xs font-bold text-white">
+                  Check-in Yapmak İçin Giriş Yapmalısınız
+                </p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Mekanın muhtarı (Mayor) olmak ve diğer üyeleri görmek için oturum açın.
+                </p>
+              </div>
+              <div className="pt-1">
+                <Link
+                  href="/giris"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-95 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-md shadow-cyan-500/20"
+                >
+                  <span>Giriş Yap veya Kaydol</span>
+                  <span>→</span>
+                </Link>
+              </div>
             </div>
           ) : (
             <form onSubmit={handleCheckIn} className="space-y-2.5">

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { courierOrderHref } from "@/lib/feed";
 import type { Item, LoadState } from "@/lib/types";
 import { railListPlaceholder } from "./placeholder";
@@ -16,16 +17,26 @@ export function CourierCard({ couriers, state }: { couriers: readonly Item[]; st
           <p className="p-2 text-slate-400">{railListPlaceholder(state === "ok" ? "none" : state)}</p>
         ) : (
           couriers.map((c) => (
-            <a
+            <div
               key={c.id}
-              href={courierOrderHref(c)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 rounded-xl bg-[#080b18] hover:bg-emerald-600 hover:text-white text-slate-300 transition flex justify-between items-center gap-2"
+              className="p-2 rounded-xl bg-[#080b18] hover:bg-slate-850 text-slate-300 transition flex justify-between items-center gap-2 group"
             >
-              <span className="font-bold truncate min-w-0">{c.title}</span>
-              <span className="text-emerald-400 font-mono font-bold shrink-0">Sipariş Ver →</span>
-            </a>
+              <Link
+                href={`/mekan/${c.id}`}
+                className="font-bold truncate min-w-0 hover:text-emerald-300 hover:underline"
+                title={`${c.title} profili ve menüsü`}
+              >
+                {c.title}
+              </Link>
+              <a
+                href={courierOrderHref(c)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-emerald-400 font-mono font-bold shrink-0 hover:underline text-[11px]"
+              >
+                Sipariş Ver →
+              </a>
+            </div>
           ))
         )}
       </div>

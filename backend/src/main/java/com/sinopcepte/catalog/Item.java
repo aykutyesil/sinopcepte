@@ -33,6 +33,15 @@ public class Item {
     @Column(name = "map_url")
     private String mapUrl;
 
+    @Column(name = "owner_handle")
+    private String ownerHandle;
+
+    @Column(name = "photos_json", nullable = false)
+    private String photosJson = "[]";
+
+    @Column(name = "menu_json", nullable = false)
+    private String menuJson = "[]";
+
     /** Seed sırasını korumak için iç alan; JSON çıktısında yer almaz. */
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
@@ -63,6 +72,12 @@ public class Item {
     public void setRating(String rating) { this.rating = rating; }
     public String getMapUrl() { return mapUrl; }
     public void setMapUrl(String mapUrl) { this.mapUrl = mapUrl; }
+    public String getOwnerHandle() { return ownerHandle; }
+    public void setOwnerHandle(String ownerHandle) { this.ownerHandle = ownerHandle; }
+    public String getPhotosJson() { return photosJson; }
+    public void setPhotosJson(String photosJson) { this.photosJson = photosJson; }
+    public String getMenuJson() { return menuJson; }
+    public void setMenuJson(String menuJson) { this.menuJson = menuJson; }
     public int getSortOrder() { return sortOrder; }
     public void setSortOrder(int sortOrder) { this.sortOrder = sortOrder; }
 }

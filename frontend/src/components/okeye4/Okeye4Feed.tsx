@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   CATEGORY_INFO,
   getLobbies,
@@ -14,6 +15,7 @@ import { ApplyModal } from "./ApplyModal";
 import { HostManageModal } from "./HostManageModal";
 
 export function Okeye4Feed({ me }: { me?: AuthUser | null }) {
+  const router = useRouter();
   const [lobbies, setLobbies] = useState<Lobby[]>([]);
   const [activeCategory, setActiveCategory] = useState<LobbyCategory | "all">("all");
   const [createOpen, setCreateOpen] = useState(false);
@@ -25,8 +27,29 @@ export function Okeye4Feed({ me }: { me?: AuthUser | null }) {
   };
 
   useEffect(() => {
-    refresh();
+    const timer = setTimeout(() => {
+      refresh();
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
+
+  const isLoggedIn = Boolean(me && (me.handle || me.username));
+
+  const handleOpenCreate = () => {
+    if (!isLoggedIn) {
+      router.push("/giris");
+      return;
+    }
+    setCreateOpen(true);
+  };
+
+  const handleApply = (lobby: Lobby) => {
+    if (!isLoggedIn) {
+      router.push("/giris");
+      return;
+    }
+    setSelectedApplyLobby(lobby);
+  };
 
   const filtered = lobbies.filter((l) => {
     if (activeCategory === "all") return true;
@@ -62,7 +85,7 @@ export function Okeye4Feed({ me }: { me?: AuthUser | null }) {
 
             <button
               type="button"
-              onClick={() => setCreateOpen(true)}
+              onClick={handleOpenCreate}
               className="py-2.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 hover:opacity-95 text-white font-black text-xs shadow-lg shadow-rose-950/40 transition flex items-center justify-center gap-2 shrink-0 self-start sm:self-auto"
             >
               <span className="text-sm">✨</span>
@@ -139,7 +162,7 @@ export function Okeye4Feed({ me }: { me?: AuthUser | null }) {
             <div className="mt-3">
               <button
                 type="button"
-                onClick={() => setCreateOpen(true)}
+                onClick={handleOpenCreate}
                 className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold transition text-xs"
               >
                 İlk İlanı Sen Aç →
@@ -152,7 +175,7 @@ export function Okeye4Feed({ me }: { me?: AuthUser | null }) {
               key={lobby.id}
               lobby={lobby}
               currentUser={me}
-              onApply={(l) => setSelectedApplyLobby(l)}
+              onApply={handleApply}
               onManage={(l) => setSelectedManageLobby(l)}
             />
           ))

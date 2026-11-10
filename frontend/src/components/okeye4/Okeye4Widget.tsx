@@ -13,7 +13,10 @@ export function Okeye4Widget({
   const [lobbies, setLobbies] = useState<Lobby[]>([]);
 
   useEffect(() => {
-    setLobbies(getLobbies());
+    const timer = setTimeout(() => {
+      setLobbies(getLobbies());
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const openLobbies = lobbies.filter((l) => l.status === "open").slice(0, 2);

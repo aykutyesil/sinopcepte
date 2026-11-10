@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { applyToLobby, CATEGORY_INFO, type Lobby } from "@/lib/okeye4";
 import { fetchMe } from "@/lib/client-api";
 import type { AuthUser } from "@/lib/types";
@@ -35,6 +36,7 @@ export function ApplyModal({
   useEffect(() => {
     if (!isOpen) return;
 
+    let alive = true;
     const fillUser = (u: AuthUser) => {
       setLoggedInUser(u);
       const h = (u.handle || u.username || "").replace(/^@/, "");
@@ -43,7 +45,7 @@ export function ApplyModal({
       if (u.avatar) {
         setAvatar(avatarEmoji(u.avatar));
       }
-      const memberPhone = getMemberPhone(h) || localStorage.getItem("sinopcepte_phone") || "";
+      const memberPhone = getMemberPhone(h) || "";
       if (memberPhone) {
         setPhone(memberPhone);
       }
@@ -53,14 +55,20 @@ export function ApplyModal({
       fillUser(currentUser);
     } else {
       fetchMe().then((u) => {
+        if (!alive) return;
         if (u && (u.handle || u.username)) {
           fillUser(u);
+        } else {
+          setLoggedInUser(null);
         }
+      }).catch(() => {
+        if (alive) setLoggedInUser(null);
       });
     }
 
-    const savedPhone = localStorage.getItem("sinopcepte_phone");
-    if (savedPhone) setPhone(savedPhone);
+    return () => {
+      alive = false;
+    };
   }, [isOpen, currentUser]);
 
   if (!isOpen || !lobby) return null;
@@ -71,7 +79,13 @@ export function ApplyModal({
     e.preventDefault();
     setError(null);
 
-    const cleanHandle = handle.trim().replace(/^@/, "") || (loggedInUser?.handle || loggedInUser?.username) || "misafir";
+    if (!loggedInUser || !(loggedInUser.handle || loggedInUser.username)) {
+      setError("Başvuru yapmak için giriş yapmalısınız.");
+      return;
+    }
+
+    const userHandle = (loggedInUser.handle || loggedInUser.username).replace(/^@/, "");
+    const cleanHandle = handle.trim().replace(/^@/, "") || userHandle;
     const cleanPhone = phone.trim();
     const cleanWa = cleanPhone.replace(/\D/g, "");
 
@@ -162,6 +176,36 @@ export function ApplyModal({
             >
               Tamamdır, Teşekkürler
             </button>
+          </div>
+        ) : !loggedInUser ? (
+          <div className="py-6 text-center space-y-4">
+            <div className="w-16 h-16 rounded-3xl bg-rose-500/20 border border-rose-500/40 text-rose-400 text-3xl flex items-center justify-center mx-auto">
+              🔒
+            </div>
+            <div>
+              <h4 className="text-base font-black text-white">
+                Giriş Yapmalısınız
+              </h4>
+              <p className="text-xs text-slate-300 mt-1 max-w-xs mx-auto">
+                Bu masaya katılım talebi göndermek için SinopCepte hesabınıza giriş yapın.
+              </p>
+            </div>
+            <div className="pt-2 flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition"
+              >
+                Vazgeç
+              </button>
+              <Link
+                href="/giris"
+                className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-rose-600 to-purple-600 hover:opacity-95 text-white font-bold text-xs transition shadow-lg flex items-center gap-1.5"
+              >
+                <span>Giriş Yap</span>
+                <span>→</span>
+              </Link>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">

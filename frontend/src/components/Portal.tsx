@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { buildFeed } from "@/lib/feed";
 import { fetchMe, isAdmin as hasAdminRole, logout } from "@/lib/client-api";
-import type { AuthUser, FeedFilter, PortalData } from "@/lib/types";
+import type { AuthUser, FeedFilter, LiveEvent, PortalData } from "@/lib/types";
 import { useWeather } from "@/hooks/useWeather";
 import { Dock } from "./Dock";
 import { FeedHeader } from "./FeedHeader";
@@ -16,6 +16,7 @@ import { AdminPanelModal } from "./admin/AdminPanelModal";
 import { Okeye4Feed } from "./okeye4/Okeye4Feed";
 import { Okeye4Widget } from "./okeye4/Okeye4Widget";
 import { NotificationsModal } from "./notifications/NotificationsModal";
+import { getVenueEvents, toLiveEvent, VENUE_UPDATED_EVENT } from "@/lib/venue-profile";
 
 // Legacy portal.html SPA düzeni: sol dock (20-30), orta akış (32-230), sağ ray (231-314).
 // SSR'dan `data` dolu gelir (yükleniyor durumu yok); yalnız istemci yenilemelerinde `null` olabilir.
@@ -31,10 +32,24 @@ export function Portal({ data }: { data: PortalData | null }) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
 
+  const [customEvents, setCustomEvents] = useState<LiveEvent[]>([]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCustomEvents(getVenueEvents().map(toLiveEvent));
+    }, 0);
+    const onUpdate = () => setCustomEvents(getVenueEvents().map(toLiveEvent));
+    window.addEventListener(VENUE_UPDATED_EVENT, onUpdate);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener(VENUE_UPDATED_EVENT, onUpdate);
+    };
+  }, []);
+
   const loading = data === null;
   // Props'tan türet (state'e kopyalama yok) → router.refresh() sonrası akış güncellenir.
   const items = useMemo(() => data?.items ?? [], [data]);
-  const events = useMemo(() => data?.events ?? [], [data]);
+  const events = useMemo(() => [...customEvents, ...(data?.events ?? [])], [customEvents, data]);
   const backendError = !loading && (data.items === null || data.events === null);
 
   const feed = useMemo(() => buildFeed({ events, items, filter, query }), [events, items, filter, query]);

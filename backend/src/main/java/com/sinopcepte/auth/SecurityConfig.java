@@ -74,7 +74,8 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/api/items", "/api/events", "/api/pharmacy/today",
-                                "/api/auth/csrf").permitAll()
+                                "/api/auth/csrf", "/api/venues", "/api/venues/**",
+                                "/api/checkins", "/api/checkins/**", "/api/okeye4/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
                         .requestMatchers("/api/me", "/api/me/**").authenticated()

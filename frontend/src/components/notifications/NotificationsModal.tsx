@@ -30,7 +30,10 @@ export function NotificationsModal({
 
   useEffect(() => {
     if (!isOpen) return;
-    refresh();
+    const timer = setTimeout(() => {
+      refresh();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [isOpen]);
 
   if (!isOpen) return null;

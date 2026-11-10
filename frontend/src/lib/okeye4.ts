@@ -1,4 +1,4 @@
-﻿// "Okeye 4. Aranıyor" ve Sosyal Eşleşme Veri Modeli ve İstemci Durum Yönetimi
+﻿// "Okeye 4. Aranıyor" ve Sosyal Eşleşme Veri Modeli (PostgreSQL & Backend API Entegre)
 
 export type LobbyCategory = "okey" | "sohbet" | "mac" | "muzik" | "oyun" | "diger";
 
@@ -80,161 +80,201 @@ export const CATEGORY_INFO: Record<
 const STORAGE_KEY = "sinopcepte_okeye4_lobbies_v1";
 const MY_REQUESTS_KEY = "sinopcepte_okeye4_my_requests_v1";
 
-/** Sinop için gerçekçi varsayılan canlı masalar */
-export const INITIAL_LOBBIES: Lobby[] = [
-  {
-    id: "lobby-1",
-    category: "okey",
-    title: "101 Okey'e Acil 4. Lazım!",
-    venue: "Mathiday's Social Club",
-    locationDetails: "Alt kat sigara içilen alan, 7 no'lu masa",
-    host: {
-      handle: "serhat_snk",
-      name: "Serhat K.",
-      avatar: "👨‍🦱",
-      phone: "0532 578 11 22",
-      wa: "905325781122",
-    },
-    neededCount: 1,
-    currentCount: 3,
-    totalCount: 4,
-    note: "3 kişiyiz, arkadaş son anda ekti. 101 bilen biri gelsin çaylar kaybedenden!",
-    createdAt: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
-    expiresInMinutes: 90,
-    status: "open",
-    requests: [
-      {
-        id: "req-101",
-        user: {
-          handle: "ahmet_57",
-          name: "Ahmet",
-          avatar: "😎",
-          phone: "0544 579 22 33",
-          wa: "905445792233",
-        },
-        note: "5 dakikaya gelirim kordondayım, taş çalmam garantili!",
-        createdAt: new Date(Date.now() - 6 * 60 * 1000).toISOString(),
-        status: "pending",
+let inMemoryLobbies: Lobby[] = [];
+let isFetchingLobbies = false;
+
+interface BackendLobbyItem {
+  lobby: {
+    id: string;
+    category: string;
+    title: string;
+    venue: string;
+    district: string;
+    currentPlayers: number;
+    maxPlayers: number;
+    startTime: string;
+    expiresIn: string;
+    hostHandle: string;
+    hostName: string;
+    hostAvatar: string;
+    hostTrustScore: number;
+    hostBadge: string;
+    hostPhone?: string;
+    hostWa?: string;
+    note?: string;
+    status: string;
+    createdAt: string;
+  };
+  requests: Array<{
+    id: string;
+    lobbyId: string;
+    applicantHandle: string;
+    applicantName: string;
+    applicantAvatar: string;
+    applicantTrustScore: number;
+    applicantPhone?: string;
+    note?: string;
+    status: string;
+    createdAt: string;
+  }>;
+}
+
+export function transformBackendLobbies(items: BackendLobbyItem[]): Lobby[] {
+  return items.map((item) => {
+    const l = item.lobby;
+    const cat = (CATEGORY_INFO[l.category as LobbyCategory] ? l.category : "okey") as LobbyCategory;
+    const st = l.status.toLowerCase();
+    const status: "open" | "filled" | "expired" =
+      st === "open" ? "open" : st === "full" || st === "filled" ? "filled" : "expired";
+
+    const requests: LobbyRequest[] = (item.requests || []).map((r) => ({
+      id: r.id,
+      user: {
+        handle: r.applicantHandle,
+        name: r.applicantName,
+        avatar: r.applicantAvatar,
+        phone: r.applicantPhone,
       },
-    ],
-  },
-  {
-    id: "lobby-2",
-    category: "mac",
-    title: "Derbiyi Dev Ekranda İzleyecek Masa Arkadaşı",
-    venue: "Nihavent Pub & Bistro",
-    locationDetails: "Orta salon projeksiyon karşısı",
-    host: {
-      handle: "deniz_57",
-      name: "Deniz Y.",
-      avatar: "🎸",
-      phone: "0542 570 65 43",
-      wa: "905425706543",
-    },
-    neededCount: 2,
-    currentCount: 2,
-    totalCount: 4,
-    note: "4 kişilik masa ayırttık, 2 arkadaş gelemedi. Maç izleyip muhabbet edecekleri bekleriz.",
-    createdAt: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
-    expiresInMinutes: 120,
-    status: "open",
-    requests: [],
-  },
-  {
-    id: "lobby-3",
-    category: "sohbet",
-    title: "Kordon'da Deniz Kenarı Kahve & Muhabbet",
-    venue: "Porta Marina Coffee",
-    locationDetails: "Dış teras deniz gören taraf",
-    host: {
-      handle: "zeynep_snu",
-      name: "Zeynep (SNÜ)",
-      avatar: "👩‍🎓",
-      phone: "0533 571 33 44",
-      wa: "905335713344",
-    },
-    neededCount: 1,
-    currentCount: 1,
-    totalCount: 2,
-    note: "Vize haftası bitti kafa dağıtmaya çıktım. Kitap, dizi, kampüs sohbeti yapacak arkadaş arıyorum.",
-    createdAt: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
-    expiresInMinutes: 60,
-    status: "open",
-    requests: [],
-  },
-  {
-    id: "lobby-4",
-    category: "muzik",
-    title: "Akustik Canlı Müzik Gecesi Masa Birleştirme",
-    venue: "Cem's Burger & Lounge",
-    locationDetails: "Sahne yanı 3 no'lu köşe masa",
-    host: {
-      handle: "kaan_rock",
-      name: "Kaan M.",
-      avatar: "🎧",
-      phone: "0555 572 33 22",
-      wa: "905555723322",
-    },
-    neededCount: 2,
-    currentCount: 2,
-    totalCount: 4,
-    note: "Canlı performans 21:30'da başlıyor. Enerjik müziksever arkadaşları masamıza bekleriz!",
-    createdAt: new Date(Date.now() - 50 * 60 * 1000).toISOString(),
-    expiresInMinutes: 150,
-    status: "open",
-    requests: [
-      {
-        id: "req-102",
-        user: {
-          handle: "merve_art",
-          name: "Merve",
-          avatar: "🎨",
-          phone: "0530 573 11 22",
-          wa: "905305731122",
-        },
-        note: "Biz de 2 kız arkadaş gelmeyi düşünüyorduk, masayı birleştirelim mi?",
-        createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-        status: "accepted",
+      note: r.note || "Masaya katılmak istiyorum!",
+      createdAt: r.createdAt,
+      status: r.status.toLowerCase() === "approved" ? "accepted" : r.status.toLowerCase() === "rejected" ? "rejected" : "pending",
+    }));
+
+    return {
+      id: l.id,
+      category: cat,
+      title: l.title,
+      venue: l.venue,
+      locationDetails: l.district,
+      host: {
+        handle: l.hostHandle,
+        name: l.hostName,
+        avatar: l.hostAvatar,
+        phone: l.hostPhone,
+        wa: l.hostWa,
       },
-    ],
-  },
-];
+      neededCount: Math.max(0, l.maxPlayers - l.currentPlayers),
+      currentCount: l.currentPlayers,
+      totalCount: l.maxPlayers,
+      note: l.note || "",
+      createdAt: l.createdAt,
+      expiresInMinutes: 120,
+      status,
+      requests,
+    };
+  });
+}
+
+function canFetch(): boolean {
+  return typeof window !== "undefined" && !!window.location?.origin && process.env.NODE_ENV !== "test";
+}
+
+async function getCsrfToken(): Promise<string | null> {
+  if (!canFetch()) return null;
+  const prefix = "XSRF-TOKEN=";
+  for (const part of (typeof document !== "undefined" ? document.cookie : "").split(";")) {
+    const c = part.trim();
+    if (c.startsWith(prefix)) return decodeURIComponent(c.slice(prefix.length));
+  }
+  try {
+    await fetch("/api/auth/csrf", { credentials: "same-origin", cache: "no-store" });
+    for (const part of document.cookie.split(";")) {
+      const c = part.trim();
+      if (c.startsWith(prefix)) return decodeURIComponent(c.slice(prefix.length));
+    }
+  } catch {}
+  return null;
+}
+
+export async function fetchLobbiesFromBackend(): Promise<Lobby[]> {
+  if (!canFetch() || isFetchingLobbies) return inMemoryLobbies;
+  isFetchingLobbies = true;
+  try {
+    const res = await fetch("/api/okeye4/lobbies", { cache: "no-store", headers: { Accept: "application/json" } });
+    if (res.ok) {
+      const data: BackendLobbyItem[] = await res.json();
+      const transformed = transformBackendLobbies(data);
+      inMemoryLobbies = transformed;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(transformed));
+      } catch {}
+      window.dispatchEvent(new CustomEvent("sinopcepte:okeye4-updated", { detail: transformed }));
+      return transformed;
+    }
+  } catch (err) {
+    console.warn("Backend lobileri çekilemedi:", err);
+  } finally {
+    isFetchingLobbies = false;
+  }
+  return inMemoryLobbies;
+}
 
 export function getLobbies(): Lobby[] {
-  if (typeof window === "undefined") return INITIAL_LOBBIES;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_LOBBIES));
-      return INITIAL_LOBBIES;
-    }
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : INITIAL_LOBBIES;
-  } catch {
-    return INITIAL_LOBBIES;
+  if (typeof window === "undefined") return inMemoryLobbies;
+  if (inMemoryLobbies.length === 0) {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) inMemoryLobbies = JSON.parse(raw);
+    } catch {}
+    fetchLobbiesFromBackend().catch(() => {});
   }
+  return inMemoryLobbies;
 }
 
 export function saveLobbies(lobbies: Lobby[]): void {
+  inMemoryLobbies = lobbies;
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(lobbies));
-  } catch {
-    // quota exceeded vs.
+  } catch (e) {
+    console.error("Lobbies kaydedilemedi:", e);
   }
+  window.dispatchEvent(new CustomEvent("sinopcepte:okeye4-updated", { detail: lobbies }));
 }
 
 export function createLobby(lobby: Omit<Lobby, "id" | "createdAt" | "status" | "requests">): Lobby {
   const lobbies = getLobbies();
+  const tempId = "lobby-" + Date.now();
   const newLobby: Lobby = {
     ...lobby,
-    id: "lobby-" + Date.now(),
+    id: tempId,
     createdAt: new Date().toISOString(),
     status: "open",
     requests: [],
   };
   const updated = [newLobby, ...lobbies];
   saveLobbies(updated);
+
+  // Backend'e asenkron kaydet
+  (async () => {
+    if (!canFetch()) return;
+    try {
+      const token = await getCsrfToken();
+      const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json" };
+      if (token) headers["X-XSRF-TOKEN"] = token;
+      await fetch("/api/okeye4/lobbies", {
+        method: "POST",
+        credentials: "same-origin",
+        headers,
+        body: JSON.stringify({
+          category: lobby.category,
+          title: lobby.title,
+          venue: lobby.venue,
+          district: lobby.locationDetails || "Merkez",
+          maxPlayers: lobby.totalCount,
+          startTime: "19:30",
+          expiresIn: "2 saat sonra",
+          hostPhone: lobby.host.phone,
+          hostWa: lobby.host.wa,
+          note: lobby.note,
+        }),
+      });
+      await fetchLobbiesFromBackend();
+    } catch (err) {
+      console.warn("Backend lobby oluşturulamadı:", err);
+    }
+  })();
+
   return newLobby;
 }
 
@@ -248,7 +288,6 @@ export function applyToLobby(
   if (!target) return { success: false, error: "İlan bulunamadı" };
   if (target.status !== "open") return { success: false, error: "Masa artık açık değil" };
 
-  // Daha önce talep gönderilmiş mi?
   const existing = target.requests.find((r) => r.user.handle === applicant.handle);
   if (existing) return { success: false, error: "Bu ilana zaten başvurdun!" };
 
@@ -262,9 +301,29 @@ export function applyToLobby(
 
   target.requests.unshift(newReq);
   saveLobbies(lobbies);
-
-  // Kendi başvurularımıza da kaydedelim
   saveMyRequest(lobbyId, newReq.id);
+
+  // Backend'e asenkron ilet
+  (async () => {
+    if (!canFetch()) return;
+    try {
+      const token = await getCsrfToken();
+      const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json" };
+      if (token) headers["X-XSRF-TOKEN"] = token;
+      await fetch(`/api/okeye4/lobbies/${encodeURIComponent(lobbyId)}/apply`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers,
+        body: JSON.stringify({
+          phone: applicant.phone,
+          note: newReq.note,
+        }),
+      });
+      await fetchLobbiesFromBackend();
+    } catch (e) {
+      console.warn("Backend başvuru iletilemedi:", e);
+    }
+  })();
 
   return { success: true };
 }
@@ -283,7 +342,6 @@ export function respondToRequest(
 
   if (accept) {
     req.status = "accepted";
-    // Masadaki kişi sayısını güncelle
     if (lobby.neededCount > 0) {
       lobby.neededCount -= 1;
       lobby.currentCount += 1;
@@ -296,6 +354,26 @@ export function respondToRequest(
   }
 
   saveLobbies(lobbies);
+
+  // Backend'e asenkron ilet
+  (async () => {
+    if (!canFetch()) return;
+    try {
+      const token = await getCsrfToken();
+      const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json" };
+      if (token) headers["X-XSRF-TOKEN"] = token;
+      await fetch(`/api/okeye4/lobbies/${encodeURIComponent(lobbyId)}/requests/${encodeURIComponent(requestId)}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers,
+        body: JSON.stringify({ action: accept ? "APPROVE" : "REJECT" }),
+      });
+      await fetchLobbiesFromBackend();
+    } catch (e) {
+      console.warn("Backend başvuru yanıtı iletilemedi:", e);
+    }
+  })();
+
   return { success: true, lobby };
 }
 

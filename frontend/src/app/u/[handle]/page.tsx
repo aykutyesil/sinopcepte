@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { AuthShell, CARD } from "@/components/auth/ui";
 import { PublicProfileCard } from "@/components/profile/PublicProfileCard";
-import { loadPublicProfile } from "@/lib/server-api";
+import { loadPortalData, loadPublicProfile } from "@/lib/server-api";
 import { normalizeHandle, validateHandle } from "@/lib/validation";
 
 export const metadata: Metadata = { title: "Profil | SinopCepte" };
@@ -32,7 +32,10 @@ async function PublicProfileContent({ raw }: { raw: string }) {
   // Geçersiz ve ayrılmış rumuzlar (ör. admin; backend de ADMIN için 404 döner) backend'e gitmez.
   if (validateHandle(handle)) notFound();
 
-  const result = await loadPublicProfile(handle);
+  const [result, portalData] = await Promise.all([
+    loadPublicProfile(handle),
+    loadPortalData(),
+  ]);
   if (result.kind === "not-found") notFound();
   if (result.kind === "error") {
     return (
@@ -42,7 +45,7 @@ async function PublicProfileContent({ raw }: { raw: string }) {
       </div>
     );
   }
-  return <PublicProfileCard profile={result.profile} />;
+  return <PublicProfileCard profile={result.profile} items={portalData.items || []} />;
 }
 
 function ProfileSkeleton() {

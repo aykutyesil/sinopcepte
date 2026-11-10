@@ -7,8 +7,33 @@ import {
   markAllAsRead,
   clearNotifications,
   getUnreadCount,
-  DEFAULT_NOTIFICATIONS,
+  type AppNotification,
 } from "./notifications";
+
+const TEST_NOTIFICATIONS: AppNotification[] = [
+  {
+    id: "notif-1",
+    type: "match",
+    title: "Okeye 4. Aranıyor! 🀄",
+    message: "Masaya katılmak ister misin?",
+    timestamp: Date.now() - 12 * 60 * 1000,
+    read: false,
+    icon: "🀄",
+    badge: "Eşleşme",
+    actionUrl: "okeye4",
+  },
+  {
+    id: "notif-2",
+    type: "mayor",
+    title: "Mekan Muhtarlığı Yarışı! 👑",
+    message: "Yeni muhtar tahtı kap!",
+    timestamp: Date.now() - 45 * 60 * 1000,
+    read: false,
+    icon: "👑",
+    badge: "Swarm",
+    actionUrl: "mekan",
+  },
+];
 
 describe("notifications", () => {
   let storage: Record<string, string> = {};
@@ -32,11 +57,12 @@ describe("notifications", () => {
       dispatchEvent: () => true,
     };
     (globalThis as unknown as { localStorage: unknown }).localStorage = mockStorage;
+    saveNotifications([...TEST_NOTIFICATIONS]);
   });
 
-  it("başlangıçta varsayılan bildirimleri döner", () => {
+  it("bildirimleri döner", () => {
     const list = getNotifications();
-    expect(list.length).toBeGreaterThanOrEqual(DEFAULT_NOTIFICATIONS.length);
+    expect(list.length).toBeGreaterThanOrEqual(2);
     expect(list[0].id).toBe("notif-1");
   });
 

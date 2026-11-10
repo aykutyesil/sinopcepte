@@ -29,8 +29,11 @@ export function ItemCard({
   };
 
   useEffect(() => {
-    setMounted(true);
-    refreshState();
+    const timer = setTimeout(() => {
+      setMounted(true);
+      refreshState();
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const venueData = checkInState[item.id];
@@ -63,8 +66,20 @@ export function ItemCard({
             <span className="text-amber-400 text-[11px] sm:text-xs font-bold shrink-0">★ {displayRating(item)}</span>
           </div>
 
-          <h4 className="text-base sm:text-lg font-black text-white group-hover:text-cyan-400 transition truncate">{item.title}</h4>
-          <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5 truncate">{item.location}</p>
+          <h4 className="text-base sm:text-lg font-black text-white group-hover:text-cyan-400 transition truncate">
+            <Link href={`/mekan/${item.id}`} className="hover:underline">
+              {item.title}
+            </Link>
+          </h4>
+          <div className="flex items-center justify-between gap-2 mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-400 truncate">{item.location}</p>
+            <Link
+              href={`/mekan/${item.id}`}
+              className="text-[10px] font-bold text-cyan-400 hover:text-cyan-300 transition shrink-0 hover:underline"
+            >
+              Mekan Profili & Menü →
+            </Link>
+          </div>
           <p className="text-xs text-slate-300 mt-2 leading-relaxed break-words">{item.desc}</p>
 
           {/* 📍 SWARM MEKAN CHECK-IN ROZETİ */}

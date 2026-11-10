@@ -57,6 +57,11 @@ public class AppUser {
     @Column(name = "anonymous_mode", nullable = false)
     private boolean anonymousMode = false;
 
+    private String phone;
+
+    @Column(name = "badges_json", nullable = false)
+    private String badgesJson = "[]";
+
     @Column(name = "kvkk_accepted_at")
     private OffsetDateTime kvkkAcceptedAt;
 
@@ -84,9 +89,13 @@ public class AppUser {
     public String getInstagram() { return instagram; }
     public CheckinVisibility getCheckinVisibility() { return checkinVisibility; }
     public boolean isAnonymousMode() { return anonymousMode; }
+    public String getPhone() { return phone; }
+    public String getBadgesJson() { return badgesJson; }
     public OffsetDateTime getKvkkAcceptedAt() { return kvkkAcceptedAt; }
     public String getKvkkVersion() { return kvkkVersion; }
 
+    public void setPhone(String phone) { this.phone = phone; }
+    public void setBadgesJson(String badgesJson) { this.badgesJson = badgesJson; }
     public void setEmail(String email) { this.email = email; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 

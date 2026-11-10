@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { eventReserveHref } from "@/lib/feed";
 import type { LiveEvent } from "@/lib/types";
+import { venueHref } from "@/lib/venue-profile";
 
 // Legacy etkinlik kartı (index.html:635-671).
 
@@ -26,7 +28,13 @@ export function EventCard({ ev }: { ev: LiveEvent }) {
         </h3>
 
         <div className="flex items-center gap-1 text-[11px] sm:text-xs font-bold text-cyan-400 mt-1.5 truncate">
-          <span className="truncate">📍 {ev.venue}</span>
+          <Link
+            href={venueHref(ev.venue)}
+            className="hover:underline hover:text-cyan-300 transition truncate"
+            title={`${ev.venue} mekan profili ve menüsü`}
+          >
+            📍 {ev.venue}
+          </Link>
           <span className="text-slate-400 truncate">• {ev.location}</span>
         </div>
 
