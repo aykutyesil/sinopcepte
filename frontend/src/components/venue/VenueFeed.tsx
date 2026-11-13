@@ -7,6 +7,7 @@ import type { AuthUser, Item, LiveEvent } from "@/lib/types";
 import { ItemCard } from "@/components/ItemCard";
 import { EventCard } from "@/components/EventCard";
 import { CheckInModal } from "@/components/CheckInModal";
+import { SelectVenueModal } from "./SelectVenueModal";
 
 type VenueSubFilter = "all" | "pub" | "kafe" | "etkinlik" | "tekel" | "eczane" | "taksi";
 
@@ -33,6 +34,7 @@ export function VenueFeed({
 }) {
   const router = useRouter();
   const [subFilter, setSubFilter] = useState<VenueSubFilter>("all");
+  const [isVenueSelectorOpen, setIsVenueSelectorOpen] = useState(false);
   const [selectedVenueForCheckin, setSelectedVenueForCheckin] = useState<Item | null>(null);
 
   const handleQuickCheckinClick = () => {
@@ -40,10 +42,7 @@ export function VenueFeed({
       router.push("/giris");
       return;
     }
-    const firstVenue = items.find((i) => i.category === "mekan") || items[0];
-    if (firstVenue) {
-      setSelectedVenueForCheckin(firstVenue);
-    }
+    setIsVenueSelectorOpen(true);
   };
 
   const cleanQ = query.toLowerCase().trim();
@@ -87,17 +86,17 @@ export function VenueFeed({
   return (
     <div className="space-y-4">
       {/* Twitter (X) Tarzı Sade Check-In Kutusu */}
-      <section className="p-3 sm:p-4 rounded-2xl bg-[#0c0f17] border border-slate-800/80 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-base shrink-0 select-none">
+      <section className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 shadow-xs dark:shadow-none flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-transparent flex items-center justify-center text-base shrink-0 select-none">
           {me ? avatarEmoji(me.avatar) : "👤"}
         </div>
         <button
           type="button"
           onClick={handleQuickCheckinClick}
-          className="flex-1 text-left px-3.5 py-2 rounded-xl bg-slate-900/60 hover:bg-slate-900 border border-slate-800/60 hover:border-slate-700 text-xs sm:text-sm text-slate-400 hover:text-slate-300 transition flex items-center justify-between"
+          className="flex-1 text-left px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-200/90 dark:border-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700 text-xs sm:text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 transition flex items-center justify-between"
         >
           <span className="truncate">📍 Şu an hangi mekandasın? Bir check-in bırak...</span>
-          <span className="hidden xs:inline-block px-2.5 py-1 rounded-lg bg-white text-slate-950 font-bold text-xs shrink-0 ml-2">
+          <span className="hidden xs:inline-block px-2.5 py-1 rounded-lg bg-slate-900 text-white dark:bg-white dark:text-slate-950 font-bold text-xs shrink-0 ml-2 shadow-xs">
             Check-in
           </span>
         </button>
@@ -114,8 +113,8 @@ export function VenueFeed({
               onClick={() => setSubFilter(f.key)}
               className={`transition shrink-0 ${
                 isSelected
-                  ? "bg-white text-slate-950 font-semibold text-xs px-3 py-1.5 rounded-lg"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-900 text-xs px-3 py-1.5 rounded-lg border border-transparent"
+                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 font-semibold text-xs px-3 py-1.5 rounded-lg shadow-xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-900 text-xs px-3 py-1.5 rounded-lg border border-transparent"
               }`}
             >
               {f.label}
@@ -143,12 +142,24 @@ export function VenueFeed({
             ))}
           </div>
         ) : filteredEvents.length === 0 ? (
-          <div className="p-8 rounded-2xl bg-[#0c0f17] border border-slate-800/80 text-center space-y-2">
-            <p className="text-sm font-semibold text-white">Aradığınız kriterde mekan veya etkinlik bulunamadı</p>
-            <p className="text-xs text-slate-400">Filtreleri değiştirmeyi veya aramayı temizlemeyi deneyin.</p>
+          <div className="p-8 rounded-2xl bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 text-center space-y-2 shadow-xs">
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">Aradığınız kriterde mekan veya etkinlik bulunamadı</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Filtreleri değiştirmeyi veya aramayı temizlemeyi deneyin.</p>
           </div>
         ) : null}
       </div>
+
+      {/* Mekan Seçim Modalı */}
+      <SelectVenueModal
+        isOpen={isVenueSelectorOpen}
+        onClose={() => setIsVenueSelectorOpen(false)}
+        venues={items}
+        currentUser={me}
+        onSelectVenue={(venue) => {
+          setSelectedVenueForCheckin(venue);
+          setIsVenueSelectorOpen(false);
+        }}
+      />
 
       {/* Check-In Modalı */}
       {selectedVenueForCheckin && (
@@ -156,6 +167,10 @@ export function VenueFeed({
           item={selectedVenueForCheckin}
           currentUser={me}
           onClose={() => setSelectedVenueForCheckin(null)}
+          onChangeVenue={() => {
+            setSelectedVenueForCheckin(null);
+            setIsVenueSelectorOpen(true);
+          }}
           onUpdate={() => {}}
         />
       )}

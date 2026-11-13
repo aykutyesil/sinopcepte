@@ -1,9 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
-
-// Legacy `toggleTheme` / `updateThemeUI` (867-885). Sayfa koyu tek tema (0 adet `dark:` sınıfı);
-// düğme yalnız tercihi `sinopcepte_theme` anahtarına yazar ve ikonu değiştirir.
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 
 const KEY = "sinopcepte_theme";
 const EVENT = "sinopcepte-theme-change";
@@ -26,17 +23,29 @@ function read(): string | null {
 }
 
 export function useThemePreference() {
-  // Sunucuda ve ilk hidrasyonda null → 🌙 (hidrasyon uyuşmazlığı yok).
   const saved = useSyncExternalStore(subscribe, read, () => null);
-  const isDark = saved !== "light";
+  // Kullanıcı açıkça 'dark' seçmediyse varsayılan AÇIK (light) tema
+  const isDark = saved === "dark";
 
   const toggle = useCallback(() => {
     try {
-      localStorage.setItem(KEY, isDark ? "light" : "dark");
-    } catch {
-      // Depolama kapalıysa tercih kaydedilemez.
-    }
+      const next = isDark ? "light" : "dark";
+      localStorage.setItem(KEY, next);
+      if (next === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    } catch {}
     window.dispatchEvent(new Event(EVENT));
+  }, [isDark]);
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
   }, [isDark]);
 
   return { isDark, icon: isDark ? "🌙" : "☀️", toggle };

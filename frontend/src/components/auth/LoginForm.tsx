@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useLayoutEffect, useState } from "react";
 import Link from "next/link";
@@ -78,7 +78,12 @@ export function LoginForm() {
           />
         </div>
         <div>
-          <Label htmlFor="loginPassword">Şifre</Label>
+          <div className="flex items-center justify-between mb-1">
+            <Label htmlFor="loginPassword">Şifre</Label>
+            <Link href="/sifremi-unuttum" className="text-xs text-rose-400 hover:text-rose-300 transition">
+              Şifremi Unuttum?
+            </Link>
+          </div>
           <div className="relative">
             <input
               id="loginPassword"

@@ -23,10 +23,10 @@ export function FeedStream({
       {backendError && (
         <div
           role="alert"
-          className="rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-rose-950/40 border border-rose-500/40 text-xs text-rose-200"
+          className="rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-500/40 text-xs text-rose-800 dark:text-rose-200 shadow-xs"
         >
-          <p className="font-bold text-rose-300">Sunucuya şu an ulaşılamıyor.</p>
-          <p className="mt-1 text-slate-300">Canlı akış yüklenemedi. Lütfen biraz sonra sayfayı yenileyin.</p>
+          <p className="font-bold text-rose-700 dark:text-rose-300">Sunucuya şu an ulaşılamıyor.</p>
+          <p className="mt-1 text-slate-600 dark:text-slate-300">Canlı akış yüklenemedi. Lütfen biraz sonra sayfayı yenileyin.</p>
         </div>
       )}
 

@@ -29,19 +29,28 @@ public class AuthController {
     public record RegisterRequest(String handle, String email, String password, Boolean kvkkAccepted) {
     }
 
+    public record ForgotPasswordRequest(String emailOrHandle) {
+    }
+
+    public record ResetPasswordRequest(String token, String newPassword) {
+    }
+
     private final AuthenticationManager authenticationManager;
     private final SessionSupport sessions;
     private final CurrentUser currentUser;
     private final UserAccountService accounts;
     private final AuthRateLimits rateLimits;
+    private final PasswordResetService passwordResetService;
 
     public AuthController(AuthenticationManager authenticationManager, SessionSupport sessions,
-                          CurrentUser currentUser, UserAccountService accounts, AuthRateLimits rateLimits) {
+                          CurrentUser currentUser, UserAccountService accounts, AuthRateLimits rateLimits,
+                          PasswordResetService passwordResetService) {
         this.authenticationManager = authenticationManager;
         this.sessions = sessions;
         this.currentUser = currentUser;
         this.accounts = accounts;
         this.rateLimits = rateLimits;
+        this.passwordResetService = passwordResetService;
     }
 
     /**
@@ -109,6 +118,22 @@ public class AuthController {
     @GetMapping("/me")
     public MeResponse me(Authentication auth) {
         return MeResponse.of(currentUser.require(auth));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<PasswordResetService.ForgotPasswordResponse> forgotPassword(@RequestBody ForgotPasswordRequest req) {
+        return ResponseEntity.ok(passwordResetService.requestReset(req.emailOrHandle()));
+    }
+
+    @GetMapping("/validate-reset-token")
+    public ResponseEntity<Boolean> validateResetToken(@org.springframework.web.bind.annotation.RequestParam("token") String token) {
+        return ResponseEntity.ok(passwordResetService.validateToken(token));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@RequestBody ResetPasswordRequest req) {
+        passwordResetService.resetPassword(req.token(), req.newPassword());
+        return ResponseEntity.noContent().build();
     }
 
     private static ResponseEntity<ApiError> unauthorized() {

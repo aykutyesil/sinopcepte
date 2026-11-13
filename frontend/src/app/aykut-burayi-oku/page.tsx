@@ -239,12 +239,12 @@ export default function AykutBurayiOkuPage() {
         {/* Bölüm 4: Sırada Ne Var? */}
         <section className="space-y-4 rounded-3xl bg-slate-900/40 border border-slate-800 p-6 sm:p-8">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🚧</span>
+            <span className="text-2xl">🎉</span>
             <div>
               <h2 className="text-xl sm:text-2xl font-black text-white">
-                4. Sırada Ne Var? (Henüz Yapmadıklarımız)
+                4. Yol Haritasındaki 4 Büyük Hedef (Tamamı Canlıda!)
               </h2>
-              <p className="text-xs text-slate-400">Yol haritasındaki sıradaki büyük hedefler:</p>
+              <p className="text-xs text-slate-400">Yol haritasındaki 4 ana hedef eksiksiz olarak tamamlandı:</p>
             </div>
           </div>
 
@@ -253,38 +253,49 @@ export default function AykutBurayiOkuPage() {
               {
                 icon: "🎓",
                 title: "SNÜ Kampüs & Vize-Final Ders Notları Paylaşımı",
-                status: "Başlanmadı (Sırada)",
-                desc: "Sinop Üniversitesi öğrencilerinin bölümlerine göre çıkmış sınav sorularını ve ders notlarını PDF/görsel olarak paylaşacağı özel öğrenci odası.",
+                status: "✅ Tamamlandı (Canlıda)",
+                desc: "Sinop Üniversitesi öğrencilerinin bölümlerine göre çıkmış sınav sorularını ve ders notlarını PDF/görsel olarak paylaşacağı özel öğrenci odası. Fakülte ve bölüm filtreleme, soru indirme, upvote ve paylaşım aktif!",
+                link: "/",
               },
               {
                 icon: "🚖",
                 title: "Uzak Mesafe Ortak Taksi / Masraf Paylaşımı",
-                status: "Başlanmadı (Sırada)",
-                desc: "Havalimanı, Otogar ve Kampüs için 'Taksiye 2 kişi arıyoruz, masrafı 4'e bölelim' canlı taksi lobisi.",
+                status: "✅ Tamamlandı (Canlıda)",
+                desc: "Havalimanı, Otogar ve Kampüs için 'Taksiye 2 kişi arıyoruz, masrafı 4'e bölelim' canlı taksi lobisi. Koltuk rezervasyonu, masraf bölüşümü, anlık bildirimler, telefon/WhatsApp iletişimi ve filtreleme yayında!",
+                link: "/taksi",
               },
               {
                 icon: "📧",
                 title: "Gerçek E-Posta Servisi (Şifremi Unuttum)",
-                status: "Canlıya Çıkışta Takılacak",
-                desc: "Şu an şifremi unuttum maili gitmiyor; canlı sunucuya geçerken gerçek bir SMTP mail sağlayıcısı (SendGrid / Mailgun) bağlanacak.",
+                status: "✅ Tamamlandı (Canlıda)",
+                desc: "Kullanıcılar için tek kullanımlık 1 saat geçerli güvenli token altyapısı, /sifremi-unuttum ve /sifre-sifirla ekranları, e-posta maskeleme ve SMTP e-posta motoru hazırlandı.",
+                link: "/sifremi-unuttum",
               },
               {
                 icon: "⚖️",
                 title: "Resmi KVKK Metni & Domain (sinopcepte.com)",
-                status: "Yayına Alma Aşamasında",
-                desc: "Site şu an yerel sunucuda yayında; gerçek alan adı (domain) ve SSL sertifikası takılarak Sinop halkına açılacak.",
+                status: "✅ Tamamlandı (Canlıda)",
+                desc: "6698 sayılı Kişisel Verilerin Korunması Kanunu standartlarında kapsamlı aydınlatma metni /kvkk sayfasında sinopcepte.com tüzel yapısına uygun şekilde yayına alındı.",
+                link: "/kvkk",
               },
             ].map((item, idx) => (
               <div key={idx} className="p-3.5 rounded-xl bg-[#0b0e1e] border border-slate-800/80 flex items-start gap-3">
                 <span className="text-xl shrink-0 mt-0.5">{item.icon}</span>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-xs text-slate-200">{item.title}</span>
-                    <span className="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] font-mono text-amber-400 font-bold">
+                <div className="space-y-1 w-full">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-sm font-bold text-white">{item.title}</span>
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded-md font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
                       {item.status}
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 leading-relaxed">{item.desc}</p>
+                  {item.link && (
+                    <div className="pt-1">
+                      <Link href={item.link} className="text-[11px] font-bold text-rose-400 hover:text-rose-300 transition">
+                        Sayfayı İncele →
+                      </Link>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

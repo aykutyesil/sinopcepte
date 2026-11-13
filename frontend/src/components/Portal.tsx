@@ -17,6 +17,8 @@ import { Okeye4Feed } from "./okeye4/Okeye4Feed";
 import { ConfessionFeed } from "./confession/ConfessionFeed";
 import { VenueFeed } from "./venue/VenueFeed";
 import { MarketplaceFeed } from "./marketplace/MarketplaceFeed";
+import { CampusNotesFeed } from "./campus/CampusNotesFeed";
+import { SharedTaxiFeed } from "./taxi/SharedTaxiFeed";
 import { GuestWelcomeBanner } from "./guest/GuestWelcomeBanner";
 import { FeaturesHub } from "./guest/FeaturesHub";
 import { NotificationsModal } from "./notifications/NotificationsModal";
@@ -90,6 +92,10 @@ export function Portal({ data }: { data: PortalData | null }) {
       setActiveTab("oyunlar");
     } else if (f === "ilan") {
       setActiveTab("ilanlar");
+    } else if (f === "kampus") {
+      setActiveTab("kampus");
+    } else if (f === "taksi") {
+      setActiveTab("taksi");
     } else if (f === "kesfet") {
       setActiveTab("kesfet");
     } else {
@@ -104,8 +110,19 @@ export function Portal({ data }: { data: PortalData | null }) {
     else if (tab === "sosyal") setFilter("itiraf");
     else if (tab === "oyunlar") setFilter("okeye4");
     else if (tab === "ilanlar") setFilter("ilan");
+    else if (tab === "kampus") setFilter("kampus");
+    else if (tab === "taksi") setFilter("taksi");
     else if (tab === "kesfet") setFilter("kesfet");
   };
+
+  useEffect(() => {
+    const onSwitch = (e: Event) => {
+      const detail = (e as CustomEvent<MainTab>).detail;
+      if (detail) handleTabChange(detail);
+    };
+    window.addEventListener("sinop:switch-tab", onSwitch);
+    return () => window.removeEventListener("sinop:switch-tab", onSwitch);
+  }, []);
 
   const openAdmin = () => {
     if (loading) return;
@@ -138,7 +155,7 @@ export function Portal({ data }: { data: PortalData | null }) {
           me={me}
         />
 
-        <main className="flex-1 min-w-0 w-full max-w-2xl border-r border-slate-800 p-2.5 xs:p-3 sm:p-6 pb-20 overflow-x-clip">
+        <main className="flex-1 min-w-0 w-full max-w-2xl border-r border-slate-200/90 dark:border-slate-800 p-2.5 xs:p-3 sm:p-6 pb-20 overflow-x-clip">
           <FeedHeader
             query={query}
             onQuery={setQuery}
@@ -166,6 +183,10 @@ export function Portal({ data }: { data: PortalData | null }) {
             <Okeye4Feed me={me} />
           ) : activeTab === "ilanlar" ? (
             <MarketplaceFeed me={me} initialQuery={query} />
+          ) : activeTab === "kampus" ? (
+            <CampusNotesFeed me={me} />
+          ) : activeTab === "taksi" ? (
+            <SharedTaxiFeed currentUser={me} />
           ) : activeTab === "kesfet" ? (
             <FeaturesHub me={me} onSwitchTab={handleTabChange} />
           ) : (
@@ -179,6 +200,7 @@ export function Portal({ data }: { data: PortalData | null }) {
           pharmacyState={loading ? "loading" : data.pharmacy ? "ok" : data.pharmacyError ? "error" : "none"}
           items={items}
           itemsState={loading ? "loading" : data.items === null ? "error" : "ok"}
+          onOpenTaxiLobby={() => handleTabChange("taksi")}
         />
       </div>
 

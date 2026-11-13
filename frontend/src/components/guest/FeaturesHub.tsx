@@ -89,22 +89,66 @@ export function FeaturesHub({
         </div>
 
         {/* 4. 2. El & Öğrenci Pazarı */}
-        <div className="p-5 rounded-2xl bg-[#0c0f17] border border-slate-800/80 hover:border-slate-700 transition flex flex-col justify-between space-y-4">
+        <div className="p-5 rounded-2xl bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs dark:shadow-none transition flex flex-col justify-between space-y-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-mono text-slate-500 font-semibold tracking-wider">04 / PAZAR</span>
             </div>
-            <h3 className="text-base font-semibold text-white">2. El &amp; Öğrenci Paylaşım Pazarı</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white">2. El &amp; Öğrenci Paylaşım Pazarı</h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               Ders notları, bisiklet, çalışma masası veya eşyalar. İlan ver, alıcılarla doğrudan WhatsApp veya telefonla görüş.
             </p>
           </div>
           <button
             type="button"
             onClick={() => onSwitchTab?.("ilanlar")}
-            className="w-full py-2 px-3 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-900/60 text-slate-300 hover:text-white font-medium text-xs transition flex items-center justify-center gap-1.5"
+            className="w-full py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white font-medium text-xs transition flex items-center justify-center gap-1.5"
           >
             <span>İlanlar Pazarına Git</span>
+            <span>→</span>
+          </button>
+        </div>
+
+        {/* 5. SNÜ Kampüs & Sınav Notları */}
+        <div className="p-5 rounded-2xl bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs dark:shadow-none transition flex flex-col justify-between space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono text-rose-600 dark:text-rose-400 font-semibold tracking-wider">05 / KAMPÜS &amp; AKADEMİK</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300 font-bold">YENİ</span>
+            </div>
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white">🎓 SNÜ Kampüs &amp; Vize-Final Ders Notları</h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Sinop Üniversitesi fakültelerine göre düzenlenmiş çıkmış sınav soruları, vize-final çözümleri ve ders özetleri. İndir, çalış ve notlarını paylaş.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onSwitchTab?.("kampus")}
+            className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-rose-600 dark:hover:bg-rose-500 font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-xs"
+          >
+            <span>Kampüs Notlarına Git</span>
+            <span>→</span>
+          </button>
+        </div>
+
+        {/* 6. Ortak Taksi & Masraf Paylaşımı */}
+        <div className="p-5 rounded-2xl bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs dark:shadow-none transition flex flex-col justify-between space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono text-amber-600 dark:text-amber-400 font-semibold tracking-wider">06 / ULAŞIM &amp; MASRAF</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 font-bold">YENİ</span>
+            </div>
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white">🚖 Canlı Ortak Taksi Lobisi</h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Havalimanı, Otogar ve Kampüs güzergahlarında taksi masrafını bölüş. Taksiye kişi ara veya açık lobilerden birine katılarak tasarruf et.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onSwitchTab?.("taksi")}
+            className="w-full py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-xs"
+          >
+            <span>Taksi Lobilerine Git</span>
             <span>→</span>
           </button>
         </div>

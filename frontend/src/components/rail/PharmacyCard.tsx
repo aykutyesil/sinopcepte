@@ -4,11 +4,11 @@ import type { LoadState, Pharmacy } from "@/lib/types";
 
 export function PharmacyCard({ pharmacy, state }: { pharmacy: Pharmacy | null; state: LoadState }) {
   return (
-    <div className="rounded-3xl p-5 bg-linear-to-br/srgb from-rose-950/70 to-[#12162a] border border-rose-500/40 shadow-xl">
+    <div className="rounded-3xl p-5 bg-linear-to-br/srgb from-rose-50/80 to-white dark:from-rose-950/70 dark:to-[#12162a] border border-rose-200/90 dark:border-rose-500/40 shadow-sm dark:shadow-xl">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
-          <span className="text-[10px] font-mono font-bold text-rose-400 uppercase">Günün Nöbetçi Eczanesi</span>
+          <span className="text-[10px] font-mono font-bold text-rose-700 dark:text-rose-400 uppercase">Günün Nöbetçi Eczanesi</span>
         </div>
         {/* Legacy'deki `py-0.2` v3'te sınıf üretmiyordu (dikey dolgu yok); v4'te 0.8px üreteceği için çıkarıldı. */}
         {pharmacy && <span className="text-[9px] font-mono bg-rose-500 text-white font-bold px-1.5 rounded-sm">AÇIK</span>}
@@ -16,8 +16,8 @@ export function PharmacyCard({ pharmacy, state }: { pharmacy: Pharmacy | null; s
 
       {pharmacy ? (
         <>
-          <h3 className="text-base font-black text-white">{pharmacy.name}</h3>
-          {pharmacy.address && <p className="text-xs text-slate-300 mt-1">{pharmacy.address}</p>}
+          <h3 className="text-base font-black text-slate-900 dark:text-white">{pharmacy.name}</h3>
+          {pharmacy.address && <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">{pharmacy.address}</p>}
 
           <div className="mt-4 flex gap-2">
             {pharmacy.mapUrl && (
@@ -25,7 +25,7 @@ export function PharmacyCard({ pharmacy, state }: { pharmacy: Pharmacy | null; s
                 href={pharmacy.mapUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs text-center transition flex items-center justify-center gap-1.5"
+                className="flex-1 py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs text-center transition flex items-center justify-center gap-1.5 shadow-xs"
               >
                 <span>📍 Haritada Yol Tarifi</span>
               </a>
@@ -33,7 +33,7 @@ export function PharmacyCard({ pharmacy, state }: { pharmacy: Pharmacy | null; s
             {pharmacy.phoneFormatted && (
               <a
                 href={`tel:${pharmacy.phoneFormatted}`}
-                className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition"
+                className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80 dark:border-transparent dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white font-bold text-xs transition"
                 aria-label={`${pharmacy.name} telefon`}
               >
                 📞
@@ -42,7 +42,7 @@ export function PharmacyCard({ pharmacy, state }: { pharmacy: Pharmacy | null; s
           </div>
         </>
       ) : (
-        <p className="text-xs text-slate-300 mt-1">
+        <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
           {state === "loading"
             ? "Yükleniyor..."
             : state === "error"

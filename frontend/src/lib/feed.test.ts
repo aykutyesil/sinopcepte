@@ -1,8 +1,8 @@
-﻿// Beklenenler legacy `renderFeedStream` / `filterFeed` / `handleSearch` ve seed JSON okunarak yazıldı.
+// Beklenenler legacy `renderFeedStream` / `filterFeed` / `handleSearch` ve seed JSON okunarak yazıldı.
 import { describe, expect, it } from "vitest";
 import { buildFeed, displayRating, formatPhone, itemPrimaryAction } from "./feed";
 import { buildAdminPayload, EMPTY_ADMIN_FORM } from "./admin";
-import { weatherIcon } from "./weather";
+import { weatherIcon, weatherConditionText } from "./weather";
 import type { FeedFilter, Item, LiveEvent } from "./types";
 import seedItems from "../../../backend/src/main/resources/seed/items.json";
 import seedEvents from "../../../backend/src/main/resources/seed/events.json";
@@ -129,6 +129,16 @@ describe("hava kodu -> emoji (legacy sırası)", () => {
     [95, "❄️"],
   ])("%i -> %s", (code, icon) => {
     expect(weatherIcon(code)).toBe(icon);
+  });
+
+  it("maps weather codes to clear Turkish condition names", () => {
+    expect(weatherConditionText(0)).toBe("Açık");
+    expect(weatherConditionText(2)).toBe("Parçalı Bulutlu");
+    expect(weatherConditionText(3)).toBe("Çok Bulutlu");
+    expect(weatherConditionText(45)).toBe("Sisli");
+    expect(weatherConditionText(63)).toBe("Yağmurlu");
+    expect(weatherConditionText(71)).toBe("Karlı");
+    expect(weatherConditionText(95)).toBe("Fırtına");
   });
 });
 

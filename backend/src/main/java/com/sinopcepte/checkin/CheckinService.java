@@ -38,6 +38,9 @@ public class CheckinService {
         if (itemId == null || itemId.isBlank()) {
             throw new BadRequestException("Mekan seçilmelidir");
         }
+        // Kullanıcının önceki mekanlardaki aktif check-in'ini otomatik sil (yeni mekana geçiş)
+        checkins.deleteByHandleIgnoreCase(user.getUsername());
+
         String id = "c-" + UUID.randomUUID().toString().substring(0, 8);
         String name = (displayName != null && !displayName.isBlank()) ? displayName.trim() : user.getUsername();
         String av = (avatar != null && !avatar.isBlank()) ? avatar.trim() : user.getAvatar();

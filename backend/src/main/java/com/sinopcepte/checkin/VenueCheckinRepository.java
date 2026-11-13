@@ -9,4 +9,5 @@ public interface VenueCheckinRepository extends JpaRepository<VenueCheckin, Stri
     List<VenueCheckin> findAllByOrderByCheckedInAtDesc();
     List<VenueCheckin> findByItemIdOrderByCheckedInAtDesc(String itemId);
     List<VenueCheckin> findByHandleOrderByCheckedInAtDesc(String handle);
+    void deleteByHandleIgnoreCase(String handle);
 }

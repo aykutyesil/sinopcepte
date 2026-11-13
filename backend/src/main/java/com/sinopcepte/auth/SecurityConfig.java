@@ -76,8 +76,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/items", "/api/events", "/api/pharmacy/today",
                                 "/api/auth/csrf", "/api/venues", "/api/venues/**",
                                 "/api/checkins", "/api/checkins/**", "/api/okeye4/**",
-                                "/api/confessions", "/api/confessions/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
+                                "/api/confessions", "/api/confessions/**",
+                                "/api/campus/**", "/api/taxi/lobbies/**", "/api/taxi/**",
+                                "/api/auth/validate-reset-token").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register",
+                                "/api/auth/forgot-password", "/api/auth/reset-password",
+                                "/api/campus/notes/*/download").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
                         .requestMatchers("/api/me", "/api/me/**").authenticated()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
@@ -85,6 +89,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/api/auth/forgot-password", "/api/auth/reset-password", "/api/campus/notes/*/download")
                         .spa()
                         // spa() da withHttpOnlyFalse() kullanır; SameSite/Secure ayarlı aynı depo ile değiştiriyoruz.
                         .csrfTokenRepository(csrfTokenRepository))

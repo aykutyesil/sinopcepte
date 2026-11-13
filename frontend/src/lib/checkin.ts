@@ -1,4 +1,4 @@
-﻿// SinopCepte Swarm Mantığıyla Check-In Sistemi (PostgreSQL & Backend API Entegre)
+// SinopCepte Swarm Mantığıyla Check-In Sistemi (PostgreSQL & Backend API Entegre)
 
 export interface CheckInUser {
   id: string;
@@ -34,6 +34,39 @@ export interface BackendCheckin {
   checkedInAt: string;
 }
 
+export const CHECKIN_DURATION_MS = 2 * 60 * 60 * 1000; // 2 saat (120 dakika)
+
+export function isCheckinActive(timestamp: number, now: number = Date.now()): boolean {
+  if (typeof timestamp !== "number" || isNaN(timestamp)) return false;
+  const elapsed = now - timestamp;
+  return elapsed >= -60000 && elapsed <= CHECKIN_DURATION_MS;
+}
+
+export function formatTimeRemaining(timestamp: number, now: number = Date.now()): string {
+  const elapsed = now - timestamp;
+  const remaining = CHECKIN_DURATION_MS - elapsed;
+  if (remaining <= 0) return "Süresi doldu";
+  const minutes = Math.floor(remaining / (60 * 1000));
+  if (minutes < 60) return `${Math.max(1, minutes)} dk kaldı`;
+  const hours = Math.floor(minutes / 60);
+  const remMinutes = minutes % 60;
+  return remMinutes > 0 ? `${hours} sa ${remMinutes} dk kaldı` : `${hours} saat kaldı`;
+}
+
+export function formatTimeAtVenue(timestamp: number, now: number = Date.now()): string {
+  if (typeof timestamp !== "number" || isNaN(timestamp)) return "yeni geldi";
+  const diffMinutes = Math.max(1, Math.floor((now - timestamp) / (60 * 1000)));
+  if (diffMinutes < 60) {
+    return `${diffMinutes} dakikadır burada`;
+  }
+  const hours = Math.floor(diffMinutes / 60);
+  const mins = diffMinutes % 60;
+  if (mins === 0) {
+    return `${hours} saattir burada`;
+  }
+  return `${hours} saat ${mins} dakikadır burada`;
+}
+
 const STORAGE_KEY = "sinopcepte_swarm_v1";
 const MY_CHECKIN_KEY = "sinopcepte_my_active_checkin";
 
@@ -49,11 +82,24 @@ export interface MyActiveCheckIn {
   timestamp: number;
 }
 
-export function transformBackendCheckins(list: BackendCheckin[]): Record<string, VenueCheckInState> {
+export function transformBackendCheckins(list: BackendCheckin[], now: number = Date.now()): Record<string, VenueCheckInState> {
   const grouped: Record<string, BackendCheckin[]> = {};
   for (const c of list) {
     if (!grouped[c.itemId]) grouped[c.itemId] = [];
     grouped[c.itemId].push(c);
+  }
+
+  // Kullanıcıların en son aktif check-in zamanlarını ve mekanlarını bul
+  // Bir kullanıcı aynı anda birden fazla mekanda aktif olamaz (mekan değiştirince eskisi düşer)
+  const latestCheckinPerHandle = new Map<string, { venueId: string; timestamp: number }>();
+  for (const c of list) {
+    const ts = new Date(c.checkedInAt).getTime();
+    if (isCheckinActive(ts, now)) {
+      const existing = latestCheckinPerHandle.get(c.handle);
+      if (!existing || ts > existing.timestamp) {
+        latestCheckinPerHandle.set(c.handle, { venueId: c.itemId, timestamp: ts });
+      }
+    }
   }
 
   const result: Record<string, VenueCheckInState> = {};
@@ -90,14 +136,21 @@ export function transformBackendCheckins(list: BackendCheckin[]): Record<string,
           checkInCount: 1,
         };
 
-    const activeUsers: CheckInUser[] = items.map((it) => ({
-      id: it.id,
-      handle: it.handle,
-      displayName: it.displayName,
-      avatar: it.avatar,
-      note: it.note || undefined,
-      timestamp: new Date(it.checkedInAt).getTime(),
-    }));
+    // Yalnızca son 2 saat içinde check-in yapan ve en son bu mekanda olan aktif kullanıcılar
+    const activeUsers: CheckInUser[] = items
+      .map((it) => ({
+        id: it.id,
+        handle: it.handle,
+        displayName: it.displayName,
+        avatar: it.avatar,
+        note: it.note || undefined,
+        timestamp: new Date(it.checkedInAt).getTime(),
+      }))
+      .filter((u) => {
+        if (!isCheckinActive(u.timestamp, now)) return false;
+        const latest = latestCheckinPerHandle.get(u.handle);
+        return !latest || latest.venueId === venueId;
+      });
 
     result[venueId] = {
       venueId,
@@ -146,7 +199,17 @@ export function getCheckInState(): Record<string, VenueCheckInState> {
     // Arka planda backend'den taze veriyi çek
     fetchCheckinsFromBackend().catch(() => {});
   }
-  return inMemoryState;
+
+  // 2 saat süresi dolan kullanıcıları dinamik filtrele
+  const now = Date.now();
+  const cleaned: Record<string, VenueCheckInState> = {};
+  for (const [id, state] of Object.entries(inMemoryState)) {
+    cleaned[id] = {
+      ...state,
+      activeUsers: (state.activeUsers || []).filter((u) => isCheckinActive(u.timestamp, now)),
+    };
+  }
+  return cleaned;
 }
 
 export async function submitCheckInToBackend(
@@ -219,7 +282,7 @@ export function getMyActiveCheckIn(): MyActiveCheckIn | null {
     const raw = localStorage.getItem(MY_CHECKIN_KEY);
     if (!raw) return null;
     const item: MyActiveCheckIn = JSON.parse(raw);
-    if (Date.now() - item.timestamp > 3 * 60 * 60 * 1000) {
+    if (!isCheckinActive(item.timestamp)) {
       clearMyActiveCheckIn();
       return null;
     }
