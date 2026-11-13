@@ -7,16 +7,18 @@ import { fetchMe, isAdmin as hasAdminRole, logout } from "@/lib/client-api";
 import type { AuthUser, FeedFilter, LiveEvent, PortalData } from "@/lib/types";
 import { useWeather } from "@/hooks/useWeather";
 import { Dock } from "./Dock";
-import { FeedHeader } from "./FeedHeader";
+import { FeedHeader, type MainTab } from "./FeedHeader";
 import { FeedStream } from "./FeedStream";
 import { RightRail } from "./rail/RightRail";
 import { AdminFloatingBar } from "./admin/AdminFloatingBar";
 import { AdminLoginModal } from "./admin/AdminLoginModal";
 import { AdminPanelModal } from "./admin/AdminPanelModal";
 import { Okeye4Feed } from "./okeye4/Okeye4Feed";
-import { Okeye4Widget } from "./okeye4/Okeye4Widget";
 import { ConfessionFeed } from "./confession/ConfessionFeed";
-import { ConfessionWidget } from "./confession/ConfessionWidget";
+import { VenueFeed } from "./venue/VenueFeed";
+import { MarketplaceFeed } from "./marketplace/MarketplaceFeed";
+import { GuestWelcomeBanner } from "./guest/GuestWelcomeBanner";
+import { FeaturesHub } from "./guest/FeaturesHub";
 import { NotificationsModal } from "./notifications/NotificationsModal";
 import { getVenueEvents, toLiveEvent, VENUE_UPDATED_EVENT } from "@/lib/venue-profile";
 
@@ -27,7 +29,8 @@ export function Portal({ data }: { data: PortalData | null }) {
   const router = useRouter();
   const weather = useWeather();
 
-  const [filter, setFilter] = useState<FeedFilter>("all");
+  const [filter, setFilter] = useState<FeedFilter>("mekan");
+  const [activeTab, setActiveTab] = useState<MainTab>("mekan");
   const [query, setQuery] = useState("");
   const [me, setMe] = useState<AuthUser | null | undefined>(undefined);
   const [loginOpen, setLoginOpen] = useState(false);
@@ -79,10 +82,29 @@ export function Portal({ data }: { data: PortalData | null }) {
   }, []);
 
   const handleFilter = (f: FeedFilter) => {
-    // Legacy filtre tıklaması arama sonucunu bırakıp filtre görünümünü çizer ama kutudaki
-    // metni silmez; burada görünenle kutu tutarlı olsun diye arama da temizlenir.
     setFilter(f);
     setQuery("");
+    if (f === "itiraf") {
+      setActiveTab("sosyal");
+    } else if (f === "okeye4") {
+      setActiveTab("oyunlar");
+    } else if (f === "ilan") {
+      setActiveTab("ilanlar");
+    } else if (f === "kesfet") {
+      setActiveTab("kesfet");
+    } else {
+      setActiveTab("mekan");
+    }
+  };
+
+  const handleTabChange = (tab: MainTab) => {
+    setActiveTab(tab);
+    setQuery("");
+    if (tab === "mekan") setFilter("mekan");
+    else if (tab === "sosyal") setFilter("itiraf");
+    else if (tab === "oyunlar") setFilter("okeye4");
+    else if (tab === "ilanlar") setFilter("ilan");
+    else if (tab === "kesfet") setFilter("kesfet");
   };
 
   const openAdmin = () => {
@@ -107,7 +129,7 @@ export function Portal({ data }: { data: PortalData | null }) {
 
   return (
     <>
-      <div className="max-w-7xl mx-auto flex min-h-screen w-full overflow-x-hidden">
+      <div className="max-w-7xl mx-auto flex min-h-screen w-full overflow-x-clip">
         <Dock
           filter={filter}
           onFilter={handleFilter}
@@ -116,7 +138,7 @@ export function Portal({ data }: { data: PortalData | null }) {
           me={me}
         />
 
-        <main className="flex-1 min-w-0 w-full max-w-2xl border-r border-slate-800 p-2.5 xs:p-3 sm:p-6 pb-20 overflow-x-hidden">
+        <main className="flex-1 min-w-0 w-full max-w-2xl border-r border-slate-800 p-2.5 xs:p-3 sm:p-6 pb-20 overflow-x-clip">
           <FeedHeader
             query={query}
             onQuery={setQuery}
@@ -124,28 +146,30 @@ export function Portal({ data }: { data: PortalData | null }) {
             pharmacy={data?.pharmacy ?? null}
             pharmacyState={loading ? "loading" : data.pharmacy ? "ok" : data.pharmacyError ? "error" : "none"}
             onOpenNotifications={() => setNotifOpen(true)}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
           />
 
-          {filter === "okeye4" ? (
-            <Okeye4Feed me={me} />
-          ) : filter === "itiraf" ? (
+          {/* Giriş yapmamış misafirler için şık vitrin bannerı */}
+          {me === null && <GuestWelcomeBanner />}
+
+          {activeTab === "mekan" ? (
+            <VenueFeed
+              items={items}
+              events={events}
+              me={me}
+              query={query}
+            />
+          ) : activeTab === "sosyal" ? (
             <ConfessionFeed me={me} />
+          ) : activeTab === "oyunlar" ? (
+            <Okeye4Feed me={me} />
+          ) : activeTab === "ilanlar" ? (
+            <MarketplaceFeed me={me} initialQuery={query} />
+          ) : activeTab === "kesfet" ? (
+            <FeaturesHub me={me} onSwitchTab={handleTabChange} />
           ) : (
-            <>
-              {filter === "all" && !query && (
-                <>
-                  <ConfessionWidget
-                    onViewAll={() => handleFilter("itiraf")}
-                    onOpenCreate={() => handleFilter("itiraf")}
-                  />
-                  <Okeye4Widget
-                    onViewAll={() => handleFilter("okeye4")}
-                    onOpenCreate={() => handleFilter("okeye4")}
-                  />
-                </>
-              )}
-              <FeedStream feed={feed} loading={loading} backendError={backendError} currentUser={me} />
-            </>
+            <FeedStream feed={feed} loading={loading} backendError={backendError} currentUser={me} />
           )}
         </main>
 

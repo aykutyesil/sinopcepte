@@ -19,7 +19,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     // Koyu tek tema (parity P13): sınıf sunucuda sabit, istemcide değişmez.
     <html lang="tr" className={`dark ${jakarta.variable}`} suppressHydrationWarning>
-      <body className="bg-[#090b14] text-slate-100 font-sans antialiased selection:bg-rose-500 selection:text-white min-h-screen overflow-x-hidden w-full max-w-full">
+      <body className="bg-[#090b14] text-slate-100 font-sans antialiased selection:bg-rose-500 selection:text-white min-h-screen overflow-x-clip w-full max-w-full">
         {children}
       </body>
     </html>

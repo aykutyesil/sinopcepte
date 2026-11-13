@@ -25,7 +25,7 @@ export function RightRail({
   const couriers = items.filter((i) => i.category === "tekel");
 
   return (
-    <aside className="hidden lg:block w-80 shrink-0 p-6 space-y-6 sticky top-0 h-screen overflow-y-auto no-scrollbar">
+    <aside className="hidden lg:block w-80 shrink-0 p-6 space-y-6 sticky top-0 h-screen self-start overflow-y-auto no-scrollbar">
       <WeatherCard weather={weather} />
       <PharmacyCard pharmacy={pharmacy} state={pharmacyState} />
       <TaxiCard taxis={taxis} state={itemsState} />

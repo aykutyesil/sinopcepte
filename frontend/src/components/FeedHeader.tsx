@@ -7,7 +7,15 @@ import { weatherIconOf, weatherTemp } from "@/hooks/useWeather";
 import { useNotifications } from "@/hooks/useNotifications";
 import { MobileRadarStrip } from "./MobileRadarStrip";
 
-// Legacy akış başlığı + arama (index.html:144-217).
+export type MainTab = "mekan" | "sosyal" | "oyunlar" | "ilanlar" | "kesfet";
+
+export const MAIN_TABS: { key: MainTab; label: string }[] = [
+  { key: "mekan", label: "Mekanlar" },
+  { key: "sosyal", label: "Sosyal & İtiraf" },
+  { key: "oyunlar", label: "Oyun Masaları" },
+  { key: "ilanlar", label: "2. El İlanlar" },
+  { key: "kesfet", label: "Keşfet & Rehber" },
+];
 
 export function FeedHeader({
   query,
@@ -16,6 +24,8 @@ export function FeedHeader({
   pharmacy,
   pharmacyState,
   onOpenNotifications,
+  activeTab = "mekan",
+  onTabChange,
 }: {
   query: string;
   onQuery: (q: string) => void;
@@ -23,81 +33,79 @@ export function FeedHeader({
   pharmacy: Pharmacy | null;
   pharmacyState: LoadState;
   onOpenNotifications?: () => void;
+  activeTab?: MainTab;
+  onTabChange?: (tab: MainTab) => void;
 }) {
-  // Legacy `handleSearch`: kırpılmış değer boşsa `clearSearch()` kutuyu da boşaltır.
   const handleInput = (val: string) => onQuery((val || "").trim() ? val : "");
   const searching = query.trim() !== "";
   const { unreadCount } = useNotifications();
 
   return (
-    <div className="sticky top-0 z-20 backdrop-blur-xl bg-[#090b14]/90 pb-3 sm:pb-4 mb-3 sm:mb-4 border-b border-slate-800">
-      <div className="flex items-center justify-between gap-1.5 mb-2.5">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-base xs:text-lg sm:text-2xl font-black text-white font-display truncate">Sinop Canlı Akışı</h1>
-          <p className="text-[10px] sm:text-xs text-slate-400 truncate">Şehirde şu an ne var? Canlı akış</p>
+    <div className="sticky top-0 z-20 backdrop-blur-xl bg-[#090b14]/95 pb-2 mb-3 border-b border-slate-800/80">
+      <div className="flex items-center justify-between gap-2 mb-2.5">
+        {/* Sol: Başlık + Minik Canlı Noktası */}
+        <div className="min-w-0 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" title="Canlı Akış Aktif" />
+          <h1 className="text-base sm:text-lg font-bold text-white tracking-tight truncate">
+            Sinop Canlı Akışı
+          </h1>
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
-          {/* 📖 Aykut Burayı Oku Hızlı Buton */}
+        {/* Sağ Butonlar: Sade & Minimal */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Hava Durumu Sade Text Rozet */}
+          <div
+            className="lg:hidden inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-800 bg-slate-900/50 text-slate-300 font-mono text-[11px]"
+            title="Sinop Canlı Hava Durumu"
+          >
+            <span>{weatherTemp(weather)}</span>
+            <span>{weatherIconOf(weather)}</span>
+          </div>
+
+          {/* Aykut Oku Butonu */}
           <Link
             href="/aykut-burayi-oku"
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-linear-to-r from-cyan-950/80 to-blue-900/60 hover:from-cyan-900 hover:to-blue-800 border border-cyan-400/60 text-cyan-200 hover:text-white font-bold text-xs shadow-md transition active:scale-95"
+            className="border border-slate-700 text-slate-300 text-xs px-2.5 py-1 rounded-lg hover:border-slate-500 hover:text-white transition inline-flex items-center gap-1 font-medium"
             title="Aykut Burayı Oku (Rehber)"
           >
-            <span>📖</span>
-            <span className="hidden sm:inline text-[11px] font-black">Aykut Oku</span>
+            <span>Aykut Oku</span>
           </Link>
 
-          {/* 🔔 Mobilde / Üstte Hızlı Bildirimler Butonu */}
+          {/* Bildirim Butonu */}
           <button
             type="button"
             onClick={onOpenNotifications}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-rose-950/60 to-purple-950/60 hover:from-rose-900/80 hover:to-purple-900/80 border border-rose-500/50 text-rose-200 font-bold text-xs shadow-md transition active:scale-95"
-            title="Canlı Bildirimler"
+            className="relative p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 transition"
+            title="Bildirimler"
+            aria-label="Bildirimler"
           >
-            <span className="text-xs">🔔</span>
-            <span className="hidden xs:inline text-[11px] font-bold">Bildirim</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
             {unreadCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-rose-600 text-white text-[9px] font-black animate-pulse">
-                {unreadCount}
-              </span>
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500" />
             )}
           </button>
-
-          {/* Mobilde Canlı Hava Durumu Rozeti */}
-          <div
-            className="lg:hidden inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#101426] border border-cyan-500/40 text-cyan-300 font-mono text-[10px] sm:text-xs shadow-xs"
-            title="Sinop Canlı Hava Durumu"
-          >
-            <span className="text-xs">{weatherIconOf(weather)}</span>
-            <span className="font-bold text-white whitespace-nowrap">{weatherTemp(weather)}</span>
-          </div>
-
-          {/* Radar Canlı Rozeti */}
-          <span className="text-[9px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center gap-1 shrink-0">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
-            <span>CANLI</span>
-          </span>
         </div>
       </div>
 
-      {/* Arama Girişi */}
-      <div className="bg-[#101426] border border-slate-800 rounded-xl sm:rounded-2xl px-3 py-1.5 sm:py-2 flex items-center gap-2 focus-within:border-cyan-500 shadow-inner">
-        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+      {/* Minimalist Arama Girişi */}
+      <div className="bg-slate-900/60 border border-slate-800 rounded-xl px-3.5 py-2 flex items-center gap-2.5 focus-within:border-slate-600 transition">
+        <svg className="w-4 h-4 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
           type="text"
           value={query}
           onChange={(e) => handleInput(e.target.value)}
-          placeholder="Etkinlik, mekan, taksi durağı veya nöbetçi eczane ara..."
-          className="w-full bg-transparent text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-hidden font-medium"
+          placeholder="Mekan, etkinlik, nöbetçi eczane veya 2. el ara..."
+          className="w-full bg-transparent text-sm text-slate-100 placeholder-slate-500 focus:outline-hidden font-normal"
         />
         {searching && (
           <button
             type="button"
             onClick={() => onQuery("")}
-            className="text-[10px] font-bold text-slate-400 hover:text-white px-1.5 py-0.5 rounded bg-slate-800/80 shrink-0"
+            className="text-xs text-slate-400 hover:text-white px-1.5 py-0.5 rounded bg-slate-800 shrink-0"
             aria-label="Aramayı temizle"
           >
             ✕
@@ -106,6 +114,32 @@ export function FeedHeader({
       </div>
 
       <MobileRadarStrip weather={weather} pharmacy={pharmacy} pharmacyState={pharmacyState} />
+
+      {/* Twitter (X) Tarzı Sade Akış Sekmeleri Barı */}
+      {onTabChange && (
+        <nav className="flex items-center border-t border-slate-800/80 mt-2.5 overflow-x-auto scrollbar-none">
+          {MAIN_TABS.map((tab) => {
+            const isSelected = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => onTabChange(tab.key)}
+                className={`flex-1 min-w-[80px] sm:min-w-0 py-2.5 px-2 text-center text-xs sm:text-sm font-medium transition relative flex items-center justify-center whitespace-nowrap ${
+                  isSelected
+                    ? "text-white font-semibold"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <span>{tab.label}</span>
+                {isSelected && (
+                  <span className="absolute bottom-0 inset-x-3 sm:inset-x-4 h-0.5 bg-white rounded-full transition-all" />
+                )}
+              </button>
+            );
+          })}
+        </nav>
+      )}
     </div>
   );
 }

@@ -2,14 +2,16 @@
 
 export type ItemCategory = "mekan" | "tekel" | "taksi" | "eczane" | "cicek";
 
-/** Sol menüdeki filtreler: `all` + `okeye4` + `itiraf` + `etkinlik` + item kategorileri. */
-export type FeedFilter = "all" | "okeye4" | "itiraf" | "etkinlik" | ItemCategory;
+/** Sol menüdeki filtreler: `all` + `okeye4` + `itiraf` + `etkinlik` + `ilan` + `kesfet` + item kategorileri. */
+export type FeedFilter = "all" | "okeye4" | "itiraf" | "etkinlik" | "ilan" | "kesfet" | ItemCategory;
 
 export const FEED_FILTERS: readonly FeedFilter[] = [
   "all",
   "okeye4",
   "itiraf",
   "etkinlik",
+  "ilan",
+  "kesfet",
   "mekan",
   "taksi",
   "tekel",
@@ -60,6 +62,7 @@ export interface AuthUser {
   roles: string[];
   handle?: string;
   avatar?: string;
+  phone?: string | null;
 }
 
 export type CheckinVisibility = "PUBLIC" | "HIDDEN";

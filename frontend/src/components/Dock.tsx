@@ -11,15 +11,16 @@ import { useNotifications } from "@/hooks/useNotifications";
 // Legacy sol dock (index.html:76-139).
 
 const NAV: { filter: FeedFilter; icon: string; label: string; badge?: string }[] = [
-  { filter: "all", icon: "⚡", label: "Canlı Akış (Tümü)" },
-  { filter: "okeye4", icon: "🀄", label: "Okeye 4. Aranıyor", badge: "CANLI" },
-  { filter: "itiraf", icon: "🤫", label: "Gece İtirafları", badge: "YENİ" },
+  { filter: "mekan", icon: "🍸", label: "Mekan Rehberi", badge: "ANA" },
+  { filter: "itiraf", icon: "🤫", label: "Gece İtirafları", badge: "CANLI" },
+  { filter: "okeye4", icon: "🀄", label: "Okeye 4. Masaları" },
+  { filter: "ilan", icon: "🏷️", label: "2. El & Öğrenci Pazarı", badge: "YENİ" },
   { filter: "etkinlik", icon: "⚽", label: "Maç & Canlı Sahne" },
-  { filter: "mekan", icon: "🍸", label: "Mekan & Kafe" },
   { filter: "taksi", icon: "🚖", label: "7/24 Taksi" },
   { filter: "tekel", icon: "🏪", label: "Gece Açık Tekel" },
   { filter: "eczane", icon: "💊", label: "Nöbetçi Eczane" },
   { filter: "cicek", icon: "💐", label: "Çiçek & Hediye" },
+  { filter: "kesfet", icon: "🌟", label: "Özellikler & Rehber" },
 ];
 
 const ACTIVE =
@@ -52,7 +53,7 @@ export function Dock({
   const { unreadCount } = useNotifications();
 
   return (
-    <aside className="w-14 sm:w-20 md:w-60 shrink-0 border-r border-slate-800 bg-[#070910] p-1.5 xs:p-2 sm:p-4 flex flex-col justify-between sticky top-0 h-screen z-30">
+    <aside className="w-14 sm:w-20 md:w-60 shrink-0 border-r border-slate-800 bg-[#070910] p-1.5 xs:p-2 sm:p-4 flex flex-col justify-between sticky top-0 h-screen self-start overflow-y-auto no-scrollbar z-30">
       <div>
         {/* Marka / Logo (Admin için tek tık, diğerleri için 3 Tık) */}
         <div
