@@ -1,0 +1,59 @@
+# SinopCepte — yerel geliştirme / tek sunucu kurulumu
+# Kullanım: cp .env.example .env  (değerleri doldur)  &&  docker compose up --build
+services:
+  db:
+    image: postgres:17-alpine
+    mem_limit: 256m
+    environment:
+      POSTGRES_DB: sinopcepte
+      POSTGRES_USER: ${DB_USERNAME:-sinopcepte}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD .env içinde tanımlı olmalı}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-sinopcepte} -d sinopcepte"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    mem_limit: 512m
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/sinopcepte
+      DB_USERNAME: ${DB_USERNAME:-sinopcepte}
+      DB_PASSWORD: ${DB_PASSWORD}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      TZ: Europe/Istanbul
+      JAVA_TOOL_OPTIONS: "-Xmx384m -Xms128m -Duser.timezone=Europe/Istanbul"
+    depends_on:
+      db:
+        condition: service_healthy
+    # Dışarıya port açılmaz: X-Forwarded-For'a yalnız iç ağdan gelen isteklerde güvenilir.
+    # Doğrudan erişim gerekiyorsa (hata ayıklama) geçici olarak: docker compose port / exec kullanın.
+
+  frontend:
+    build: ./frontend
+    mem_limit: 256m
+    environment:
+      BACKEND_URL: http://backend:8080
+    depends_on:
+      - backend
+    # Dışarıya port açılmaz; trafik nginx üzerinden gelir.
+
+  nginx:
+    image: nginx:1.29-alpine
+    mem_limit: 64m
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:80"
+
+volumes:
+  db-data:

@@ -1,0 +1,68 @@
+spring:
+  application:
+    name: sinopcepte-backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/sinopcepte}
+    username: ${DB_USERNAME:sinopcepte}
+    password: ${DB_PASSWORD:sinopcepte}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate   # şema yalnız Flyway ile değişir
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    time-zone: Europe/Istanbul
+
+server:
+  port: ${PORT:8080}
+  # X-Forwarded-* başlıklarını Tomcat RemoteIpValve işler: başlığa YALNIZ doğrudan bağlanan taraf iç vekilse
+  # (varsayılan: 10/8, 172.16/12, 192.168/16, 127/8, 100.64/10, ::1, fc00::/7 ...) güvenir ve zinciri
+  # SAĞDAN sola okur, ilk iç olmayan adresi istemci sayar. Böylece istemcinin sola yazdığı sahte IP işe yaramaz.
+  # ("framework" stratejisi en soldaki değeri koşulsuz alıyordu → hız sınırı aşılıyordu; ölçüldü.)
+  # İç vekil listesini değiştirmek için: SERVER_TOMCAT_REMOTEIP_INTERNALPROXIES (Java regex).
+  forward-headers-strategy: native
+  servlet:
+    session:
+      timeout: 8h
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: ${SESSION_COOKIE_SECURE:false}   # HTTPS arkasında true yapın
+
+app:
+  time-zone: Europe/Istanbul
+  cookies:
+    # XSRF-TOKEN çerezinin Secure bayrağı; oturum çereziyle aynı değeri kullanır
+    secure: ${SESSION_COOKIE_SECURE:false}
+  admin:
+    # Hiç ADMIN yoksa açılışta bu bilgilerle oluşturulur. Varsayılan YOK.
+    username: ${ADMIN_USERNAME:}
+    password: ${ADMIN_PASSWORD:}
+  kvkk:
+    # Kayıtta onaylanan aydınlatma metni sürümü (app_user.kvkk_version). Metin değişince artırın.
+    version: ${KVKK_VERSION:taslak-1}
+  rate-limit:
+    # IP başına (request.getRemoteAddr(); RemoteIpValve'ın çözdüğü gerçek istemci, yukarıya bakın).
+    # Geliştirme ortamında testlerin kilitlenmemesi için limitler esnek tutulur.
+    login:          # pencere içinde izin verilen BAŞARISIZ giriş sayısı; dolunca 429
+      max: ${LOGIN_RATE_LIMIT_MAX:1000}
+      window: ${LOGIN_RATE_LIMIT_WINDOW:1m}
+    register:       # pencere içinde izin verilen kayıt denemesi (400 doğrulama hataları sayılmaz)
+      max: ${REGISTER_RATE_LIMIT_MAX:1000}
+      window: ${REGISTER_RATE_LIMIT_WINDOW:1m}
+  pharmacy:
+    fetch-enabled: ${PHARMACY_FETCH_ENABLED:true}
+    url: ${PHARMACY_URL:https://www.eczaneler.gen.tr/iframe.php?lokasyon=1627}
+    user-agent: SinopCepte/1.0
+    timeout: 15s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never

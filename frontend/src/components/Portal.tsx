@@ -1,0 +1,243 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { buildFeed } from "@/lib/feed";
+import { fetchMe, isAdmin as hasAdminRole, logout } from "@/lib/client-api";
+import type { AuthUser, FeedFilter, LiveEvent, PortalData } from "@/lib/types";
+import { useWeather } from "@/hooks/useWeather";
+import { Dock } from "./Dock";
+import { FeedHeader, type MainTab } from "./FeedHeader";
+import { FeedStream } from "./FeedStream";
+import { RightRail } from "./rail/RightRail";
+import { AdminFloatingBar } from "./admin/AdminFloatingBar";
+import { AdminLoginModal } from "./admin/AdminLoginModal";
+import { AdminPanelModal } from "./admin/AdminPanelModal";
+import { Okeye4Feed } from "./okeye4/Okeye4Feed";
+import { ConfessionFeed } from "./confession/ConfessionFeed";
+import { VenueFeed } from "./venue/VenueFeed";
+import { MarketplaceFeed } from "./marketplace/MarketplaceFeed";
+import { CampusNotesFeed } from "./campus/CampusNotesFeed";
+import { SharedTaxiFeed } from "./taxi/SharedTaxiFeed";
+import { GuestWelcomeBanner } from "./guest/GuestWelcomeBanner";
+import { FeaturesHub } from "./guest/FeaturesHub";
+import { NotificationsModal } from "./notifications/NotificationsModal";
+import { getVenueEvents, toLiveEvent, VENUE_UPDATED_EVENT } from "@/lib/venue-profile";
+
+// Legacy portal.html SPA düzeni: sol dock (20-30), orta akış (32-230), sağ ray (231-314).
+// SSR'dan `data` dolu gelir (yükleniyor durumu yok); yalnız istemci yenilemelerinde `null` olabilir.
+
+export function Portal({ data }: { data: PortalData | null }) {
+  const router = useRouter();
+  const weather = useWeather();
+
+  const [filter, setFilter] = useState<FeedFilter>("mekan");
+  const [activeTab, setActiveTab] = useState<MainTab>("mekan");
+  const [query, setQuery] = useState("");
+  const [me, setMe] = useState<AuthUser | null | undefined>(undefined);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+
+  const [customEvents, setCustomEvents] = useState<LiveEvent[]>([]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCustomEvents(getVenueEvents().map(toLiveEvent));
+    }, 0);
+    const onUpdate = () => setCustomEvents(getVenueEvents().map(toLiveEvent));
+    window.addEventListener(VENUE_UPDATED_EVENT, onUpdate);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener(VENUE_UPDATED_EVENT, onUpdate);
+    };
+  }, []);
+
+  const loading = data === null;
+  // Props'tan türet (state'e kopyalama yok) → router.refresh() sonrası akış güncellenir.
+  const items = useMemo(() => data?.items ?? [], [data]);
+  const events = useMemo(() => [...customEvents, ...(data?.events ?? [])], [customEvents, data]);
+  const backendError = !loading && (data.items === null || data.events === null);
+
+  const feed = useMemo(() => buildFeed({ events, items, filter, query }), [events, items, filter, query]);
+
+  // Oturum durumunu backend'den al. Sekme odağı ve görünürlük değişiminde tazele
+  useEffect(() => {
+    let alive = true;
+    const loadUser = () => {
+      fetchMe().then((u) => {
+        if (alive) setMe(u);
+      }).catch(() => {
+        if (alive) setMe(null);
+      });
+    };
+    loadUser();
+
+    const onFocus = () => loadUser();
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("visibilitychange", onFocus);
+    return () => {
+      alive = false;
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("visibilitychange", onFocus);
+    };
+  }, []);
+
+  const handleFilter = (f: FeedFilter) => {
+    setFilter(f);
+    setQuery("");
+    if (f === "itiraf") {
+      setActiveTab("sosyal");
+    } else if (f === "okeye4") {
+      setActiveTab("oyunlar");
+    } else if (f === "ilan") {
+      setActiveTab("ilanlar");
+    } else if (f === "kampus") {
+      setActiveTab("kampus");
+    } else if (f === "taksi") {
+      setActiveTab("taksi");
+    } else if (f === "kesfet") {
+      setActiveTab("kesfet");
+    } else {
+      setActiveTab("mekan");
+    }
+  };
+
+  const handleTabChange = (tab: MainTab) => {
+    setActiveTab(tab);
+    setQuery("");
+    if (tab === "mekan") setFilter("mekan");
+    else if (tab === "sosyal") setFilter("itiraf");
+    else if (tab === "oyunlar") setFilter("okeye4");
+    else if (tab === "ilanlar") setFilter("ilan");
+    else if (tab === "kampus") setFilter("kampus");
+    else if (tab === "taksi") setFilter("taksi");
+    else if (tab === "kesfet") setFilter("kesfet");
+  };
+
+  useEffect(() => {
+    const onSwitch = (e: Event) => {
+      const detail = (e as CustomEvent<MainTab>).detail;
+      if (detail) handleTabChange(detail);
+    };
+    window.addEventListener("sinop:switch-tab", onSwitch);
+    return () => window.removeEventListener("sinop:switch-tab", onSwitch);
+  }, []);
+
+  const openAdmin = () => {
+    if (loading) return;
+    if (isAdmin) setPanelOpen(true);
+    else setLoginOpen(true);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch {
+      // Oturum zaten düşmüş olabilir; arayüz yine de çıkış durumuna geçer.
+    }
+    setMe(null);
+    setPanelOpen(false);
+    alert("Yönetici çıkışı yapıldı.");
+    window.location.href = "/";
+  };
+
+  const isAdmin = hasAdminRole(me ?? null);
+
+  return (
+    <>
+      <div className="max-w-7xl mx-auto flex min-h-screen w-full overflow-x-clip">
+        <Dock
+          filter={filter}
+          onFilter={handleFilter}
+          onSecretTrigger={openAdmin}
+          onOpenNotifications={() => setNotifOpen(true)}
+          me={me}
+        />
+
+        <main className="flex-1 min-w-0 w-full max-w-2xl border-r border-slate-200/90 dark:border-slate-800 p-2.5 xs:p-3 sm:p-6 pb-20 overflow-x-clip">
+          <FeedHeader
+            query={query}
+            onQuery={setQuery}
+            weather={weather}
+            pharmacy={data?.pharmacy ?? null}
+            pharmacyState={loading ? "loading" : data.pharmacy ? "ok" : data.pharmacyError ? "error" : "none"}
+            onOpenNotifications={() => setNotifOpen(true)}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+
+          {/* Giriş yapmamış misafirler için şık vitrin bannerı */}
+          {me === null && <GuestWelcomeBanner />}
+
+          {activeTab === "mekan" ? (
+            <VenueFeed
+              items={items}
+              events={events}
+              me={me}
+              query={query}
+            />
+          ) : activeTab === "sosyal" ? (
+            <ConfessionFeed me={me} />
+          ) : activeTab === "oyunlar" ? (
+            <Okeye4Feed me={me} />
+          ) : activeTab === "ilanlar" ? (
+            <MarketplaceFeed me={me} initialQuery={query} />
+          ) : activeTab === "kampus" ? (
+            <CampusNotesFeed me={me} />
+          ) : activeTab === "taksi" ? (
+            <SharedTaxiFeed currentUser={me} />
+          ) : activeTab === "kesfet" ? (
+            <FeaturesHub me={me} onSwitchTab={handleTabChange} />
+          ) : (
+            <FeedStream feed={feed} loading={loading} backendError={backendError} currentUser={me} />
+          )}
+        </main>
+
+        <RightRail
+          weather={weather}
+          pharmacy={data?.pharmacy ?? null}
+          pharmacyState={loading ? "loading" : data.pharmacy ? "ok" : data.pharmacyError ? "error" : "none"}
+          items={items}
+          itemsState={loading ? "loading" : data.items === null ? "error" : "ok"}
+          onOpenTaxiLobby={() => handleTabChange("taksi")}
+        />
+      </div>
+
+      {isAdmin && <AdminFloatingBar onPanel={() => setPanelOpen(true)} onLogout={handleLogout} />}
+
+      {/* 🔔 Canlı Bildirimler Modalı */}
+      <NotificationsModal
+        isOpen={notifOpen}
+        onClose={() => setNotifOpen(false)}
+        onNavigateFilter={handleFilter}
+      />
+
+      {loginOpen && (
+        <AdminLoginModal
+          onClose={() => setLoginOpen(false)}
+          onSuccess={() => {
+            // Modal yalnız ADMIN rolünü doğruladıktan sonra çağırır; dock için tam `Me` yeniden okunur.
+            setMe((prev) => (hasAdminRole(prev ?? null) ? prev : { username: "", roles: ["ADMIN"] }));
+            setLoginOpen(false);
+            setPanelOpen(true);
+            fetchMe().then(setMe);
+          }}
+        />
+      )}
+
+      {panelOpen && isAdmin && (
+        <AdminPanelModal
+          events={events}
+          items={items}
+          onClose={() => setPanelOpen(false)}
+          onChanged={() => router.refresh()}
+          onUnauthorized={() => {
+            setMe(null);
+            setPanelOpen(false);
+          }}
+        />
+      )}
+    </>
+  );
+}

@@ -1,55 +1,95 @@
 # 🌊 SinopCepte | Şehir & Gece Hayatı Portalı
 
-Sinop şehrinin canlı etkinliklerini, maç yayınlarını, 7/24 açık nöbetçi taksilerini, gece tekel kuryelerini, çiçekçilerini ve **canlı nöbetçi eczanesini** tek bir merkezde toplayan modern şehir rehberi platformu.
+Sinop şehrinin canlı etkinliklerini, maç yayınlarını, 7/24 açık taksilerini, gece tekel kuryelerini, çiçekçilerini ve **günün nöbetçi eczanesini** tek bir merkezde toplayan şehir rehberi.
 
 ---
 
-## 🚀 Öne Çıkan Özellikler
+## 🚀 Özellikler
 
-* **🚨 Canlı Nöbetçi Eczane & Yol Tarifi:** Sinop Merkez günün nöbetçi eczanesini her gün otomatik çeker, harita konumu ve tek dokunuşla navigasyon sağlar.
-* **🌤️ Canlı Sinop Hava Durumu:** Open-Meteo API entegrasyonuyla canlı sıcaklık ve hava durumu durumu.
-* **⚽ Canlı Etkinlikler & Maç Yayını:** Mekanların canlı maç yayınları, akustik performanslar ve DJ sahneleri.
-* **🚖 7/24 Taksi & Acil İhtiyaçlar:** Meydan Taksi, Barış Taksi, gece açık nöbetçi tekel ve çiçekçiler tek tıkla arama / WhatsApp sipariş imkanı.
-* **🌓 Koyu / Açık Tema:** Gece kullanımına özel optimize edilmiş modern karanlık mod.
-* **📱 %100 Mobil Uyumlu:** Telefon ekranlarına tam oturan sıfır taşmalı arayüz.
-
----
-
-## 🎨 Tasarım Varyasyonları & Mimari
-
-Proje, farklı kullanıcı deneyimlerini test etmek üzere 4 farklı arayüz mimarisiyle geliştirilmiştir:
-
-1. **Ana Portal (`index.html`):** Şehrin tüm dinamiklerini listeleyen tam donanımlı ana akış.
-2. **Tasarım 1 (`tasarim1-harita-explorer/`):** Leaflet.js tabanlı, harita merkezli konum keşif arayüzü.
-3. **Tasarım 2 (`tasarim2-bento-dashboard/`):** Modern Bento Grid mimarisiyle tek ekranda yüksek yoğunluklu şehir panosu.
-4. **Tasarım 3 (`tasarim3-zaman-cizelgesi/`):** 24 saatlik yatay zaman çizelgesiyle akıllı şehir akışı.
-5. **Tasarım 4 (`tasarim4-canli-radar-feed/`):** Reels tarzı odaklanmış kart akışı, sol dock menü ve canlı radar göstergesi.
-6. **Tasarım Kataloğu (`katalog.html`):** Tüm tasarımların canlı karşılaştırma paneli.
+* **🚨 Nöbetçi Eczane & Yol Tarifi:** Sinop Merkez nöbetçi eczanesi her sabah 08:30'da (TSİ) backend tarafından otomatik çekilir; harita ve tek dokunuşla arama.
+* **🌤️ Canlı Hava Durumu:** Open-Meteo üzerinden canlı sıcaklık.
+* **⚽ Canlı Etkinlikler & Maç Yayını:** Mekanların maç yayınları, akustik performanslar ve DJ sahneleri.
+* **🚖 7/24 Taksi & Gece İhtiyaçları:** Taksi, gece açık tekel ve çiçekçiler; tek tıkla arama / WhatsApp.
+* **🔎 Türkçe Arama:** İ/ı/ş/ğ/ü/ö/ç duyarsız arama ve kategori filtreleri.
+* **👤 Üyelik & Profil:** Rumuz veya e-posta ile giriş, Sinop temalı avatarlar, biyo, Instagram, gizlilik ayarları, hesap silme.
+* **🛠️ Yönetim Paneli:** Etkinlik ve mekan ekleme/silme (sunucu tarafı oturum + CSRF korumalı).
+* **📱 Mobil uyumlu** koyu tema ("Canlı Radar" tasarımı).
 
 ---
 
-## 🤖 Otomasyon & GitHub Actions
+## 🧱 Mimari
 
-Depoda bulunan `.github/workflows/daily-pharmacy.yml` iş akışı sayesinde:
-* Her sabah **08:30 (TSİ)**'da otomatik çalışır.
-* Sinop Merkez'in güncel nöbetçi eczanesini çeker.
-* `pharmacy.json` dosyasını ve tüm HTML sayfalarını güncelleyerek depoya otomatik commit atar.
-
-Yerel bilgisayarda çalıştırmak için:
-```powershell
-powershell -ExecutionPolicy Bypass -File .\update-pharmacy.ps1
+```
+tarayıcı ──► nginx (:FRONTEND_PORT, tek giriş) ──► Next.js (frontend/) ──/api/*──► Spring Boot (backend/) ──► PostgreSQL
+                                                                                      └─ 08:30 TSİ nöbetçi eczane işi
 ```
 
+| Klasör | İçerik |
+|---|---|
+| `frontend/` | Next.js 16 (App Router, TypeScript, Tailwind 4) |
+| `backend/` | Spring Boot 4.1, Java 17, Flyway, Spring Security. Ayrıntı: [backend/README.md](backend/README.md) |
+| `nginx/` | Kenar vekili. Gerçek istemci IP'sini yazar; hız sınırı buna dayanır |
+| `scripts/` | Seed çıkarma, ekran görüntüsü, uçtan uca duman testi, hız sınırı kontrolü |
+| `legacy/` | Eski statik HTML sürümü ve 4 tasarım varyasyonu (referans) |
+| `docs/` | Eski/yeni ekran görüntüleri ve eşdeğerlik listesi |
+
 ---
 
-## 🗺️ Gelecek Özellikler (Yol Haritası)
-Detaylı plan için [ROADMAP.md](ROADMAP.md) belgesini inceleyebilirsiniz:
-* **📍 Swarm Check-In:** Mekanlarda check-in, anlık mekandakiler ve Mekan Mayor'ı unvanları.
-* **🤫 Gizli İtiraf Paneli:** Anonim dedikodu ve itiraf akışı.
-* **👤 Kullanıcı Giriş & Profil:** Rozetler, istatistikler ve avatar yönetimi.
-* **🀄 "Okeye 4. Aranıyor" Feed'i:** "Gelebilir miyim? 🙋‍♂️" onaylı eşleşme ve aktivite bulma sistemi.
-* **🎓 SNÜ Kampüs & Not Paylaşımı:** Sinop Üniversitesi öğrencilerine özel fakülte/bölüm filtreli ders notları, çıkmış sorular ve akademik dayanışma havuzu.
-* **🚖 Ortak Taksi & Masraf Paylaşımı:** Havalimanı, otogar ve kampüs gibi uzak mesafeler için taksi ücretini 4 kişi bölüşerek yol arkadaşı bulma sistemi.
+## ▶️ Yerelde Çalıştırma
+
+Gerekenler: Docker Desktop. Geliştirme için ayrıca Node 24 ve Java 17.
+
+1. Ortam dosyasını oluştur ve şifreleri doldur (`DB_PASSWORD`, `ADMIN_PASSWORD`):
+   ```bash
+   cp .env.example .env
+   ```
+2. Yığını başlat:
+   ```bash
+   docker compose -p sinopcepte up --build -d
+   ```
+3. Site: `http://localhost:<FRONTEND_PORT>` (varsayılan 3000). Yönetim girişi: logoya 3 kez hızlı tıkla, `.env`'deki `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
+4. Durdurmak için:
+   ```bash
+   docker compose -p sinopcepte down
+   ```
+
+---
+
+## ✅ Doğrulama
+
+```bash
+cd backend && ./mvnw -q verify
+```
+```bash
+cd frontend && npm run build && npm run typecheck && npm run lint && npm run test
+```
+Yığın çalışırken (proje kökünde):
+```bash
+node scripts/smoke.mjs --n7
+```
+
+`scripts/ratelimit-check.mjs` hız sınırının sahte IP başlığıyla aşılamadığını ölçer; çalıştıran IP'nin girişini 10 dakika kilitler (sonra `docker compose -p sinopcepte restart backend`).
+
+---
+
+## ⚠️ Canlıya Çıkmadan Önce
+
+* HTTPS: nginx'te sertifika ayarı ve `.env`'de `SESSION_COOKIE_SECURE=true`.
+* KVKK aydınlatma metni (`/kvkk` şu an TASLAK) ve kayıt onay ifadesi hukukçu kontrolünden geçmeli.
+* E-posta doğrulama ve şifre sıfırlama yok (e-posta altyapısı gerekiyor).
+
+---
+
+## 🗺️ Yol Haritası
+
+Ayrıntı: [ROADMAP.md](ROADMAP.md). Çalışma planı ve durum: [graph.md](graph.md), [progress.md](progress.md).
+
+* ✅ **Kullanıcı Giriş & Profil**
+* ⏸️ **Swarm Check-In:** ertelendi.
+* ⏸️ **"Okeye 4. Aranıyor" ilanları:** karar bekliyor.
+* ❌ **Gizli İtiraf Paneli:** şimdilik kapsam dışı.
+* 🆕 **SNÜ Kampüs & Not Paylaşımı:** yol haritasına eklendi, başlanmadı.
+* 🆕 **Ortak Taksi & Masraf Paylaşımı:** yol haritasına eklendi, başlanmadı.
 
 ---
 

@@ -21,3 +21,9 @@ npm-debug.log*
 # Temporary files
 *.tmp
 *.temp
+
+# Ortam ve derleme çıktıları
+.env
+frontend/node_modules/
+frontend/.next/
+backend/target/
