@@ -19,32 +19,39 @@ export function CampusNotesFeed({ me }: { me?: AuthUser | null }) {
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
   const [selectedExamType, setSelectedExamType] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
   const [modalOpen, setModalOpen] = useState(false);
-
-  const loadData = () => {
-    setLoading(true);
-    fetchCampusNotes({
-      faculty: selectedFaculty !== "all" ? selectedFaculty : undefined,
-      department: selectedDepartment !== "all" ? selectedDepartment : undefined,
-      examType: selectedExamType !== "all" ? selectedExamType : undefined,
-      q: search.trim() ? search.trim() : undefined,
-    })
-      .then((data) => setNotes(data))
-      .catch(() => setNotes([]))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [selectedFaculty, selectedDepartment, selectedExamType]);
 
   // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
-      loadData();
+      setDebouncedSearch(search);
     }, 300);
     return () => clearTimeout(timer);
   }, [search]);
+
+  useEffect(() => {
+    let active = true;
+    fetchCampusNotes({
+      faculty: selectedFaculty !== "all" ? selectedFaculty : undefined,
+      department: selectedDepartment !== "all" ? selectedDepartment : undefined,
+      examType: selectedExamType !== "all" ? selectedExamType : undefined,
+      q: debouncedSearch.trim() ? debouncedSearch.trim() : undefined,
+    })
+      .then((data) => {
+        if (active) setNotes(data);
+      })
+      .catch(() => {
+        if (active) setNotes([]);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedFaculty, selectedDepartment, selectedExamType, debouncedSearch]);
 
   const activeFacultyObj = SNU_FACULTIES.find((f) => f.name === selectedFaculty);
   const departmentOptions = activeFacultyObj ? activeFacultyObj.departments : [];

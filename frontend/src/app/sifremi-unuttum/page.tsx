@@ -42,8 +42,8 @@ export default function ForgotPasswordPage() {
         devResetToken: data.devResetToken,
         resetUrl: data.resetUrl,
       });
-    } catch (err: any) {
-      setError(err.message || "Bir hata oluştu, lütfen tekrar deneyin.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Bir hata oluştu, lütfen tekrar deneyin.");
     } finally {
       setBusy(false);
     }

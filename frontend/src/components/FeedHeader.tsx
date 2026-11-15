@@ -129,32 +129,6 @@ export function FeedHeader({
       </div>
 
       <MobileRadarStrip weather={weather} pharmacy={pharmacy} pharmacyState={pharmacyState} />
-
-      {/* Twitter (X) Tarzı Sade Akış Sekmeleri Barı */}
-      {onTabChange && (
-        <nav className="flex items-center border-t border-slate-200/90 dark:border-slate-800/80 mt-2.5 overflow-x-auto scrollbar-none">
-          {MAIN_TABS.map((tab) => {
-            const isSelected = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => onTabChange(tab.key)}
-                className={`flex-1 min-w-[80px] sm:min-w-0 py-2.5 px-2 text-center text-xs sm:text-sm font-medium transition relative flex items-center justify-center whitespace-nowrap ${
-                  isSelected
-                    ? "text-slate-950 dark:text-white font-bold"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                <span>{tab.label}</span>
-                {isSelected && (
-                  <span className="absolute bottom-0 inset-x-3 sm:inset-x-4 h-0.5 bg-slate-950 dark:bg-white rounded-full transition-all" />
-                )}
-              </button>
-            );
-          })}
-        </nav>
-      )}
     </div>
   );
 }

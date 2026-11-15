@@ -1,15 +1,13 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import type { Item, AuthUser } from "@/lib/types";
 import { matchSearch, itemSearchPool } from "@/lib/search";
 import {
   getCheckInState,
   getMyActiveCheckIn,
   isCheckinActive,
-  formatTimeRemaining,
   formatTimeAtVenue,
-  type VenueCheckInState,
 } from "@/lib/checkin";
 
 export function SelectVenueModal({
@@ -17,7 +15,6 @@ export function SelectVenueModal({
   onClose,
   venues,
   onSelectVenue,
-  currentUser,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -26,14 +23,8 @@ export function SelectVenueModal({
   currentUser?: AuthUser | null;
 }) {
   const [search, setSearch] = useState("");
-  const [checkInStates, setCheckInStates] = useState<Record<string, VenueCheckInState>>({});
   const myCheckIn = getMyActiveCheckIn();
-
-  useEffect(() => {
-    if (isOpen) {
-      setCheckInStates(getCheckInState());
-    }
-  }, [isOpen]);
+  const checkInStates = useMemo(() => (isOpen ? getCheckInState() : {}), [isOpen]);
 
   // Yalnızca mekan kategorisindeki yerleri listele (yoksa tüm öğeler)
   const venueList = useMemo(() => {

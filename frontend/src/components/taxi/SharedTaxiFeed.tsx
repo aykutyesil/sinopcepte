@@ -27,23 +27,25 @@ export function SharedTaxiFeed({ currentUser }: { currentUser?: AuthUser | null 
   const [onlyOpen, setOnlyOpen] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
 
-  const loadLobbies = async () => {
-    try {
-      setLoading(true);
-      const data = await fetchTaxiLobbies({
-        destination: selectedDest !== "all" ? selectedDest : undefined,
-        status: onlyOpen ? "OPEN" : undefined,
-      });
-      setLobbies(data);
-    } catch {
-      // sessiz hata yönetimi
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadLobbies();
+    let active = true;
+    fetchTaxiLobbies({
+      destination: selectedDest !== "all" ? selectedDest : undefined,
+      status: onlyOpen ? "OPEN" : undefined,
+    })
+      .then((data) => {
+        if (active) setLobbies(data);
+      })
+      .catch(() => {
+        // sessiz hata yönetimi
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [selectedDest, onlyOpen]);
 
   const handleJoin = async (lobbyId: string, phone?: string) => {

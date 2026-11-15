@@ -16,11 +16,6 @@ const NAV: { filter: FeedFilter; icon: string; label: string; badge?: string }[]
   { filter: "okeye4", icon: "🀄", label: "Okeye 4. Masaları" },
   { filter: "ilan", icon: "🏷️", label: "2. El & Öğrenci Pazarı" },
   { filter: "kampus", icon: "🎓", label: "SNÜ Kampüs & Notlar", badge: "YENİ" },
-  { filter: "etkinlik", icon: "⚽", label: "Maç & Canlı Sahne" },
-  { filter: "taksi", icon: "🚖", label: "7/24 Taksi" },
-  { filter: "tekel", icon: "🏪", label: "Gece Açık Tekel" },
-  { filter: "eczane", icon: "💊", label: "Nöbetçi Eczane" },
-  { filter: "cicek", icon: "💐", label: "Çiçek & Hediye" },
   { filter: "kesfet", icon: "🌟", label: "Özellikler & Rehber" },
 ];
 

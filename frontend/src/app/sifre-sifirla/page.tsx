@@ -9,10 +9,12 @@ function ResetPasswordContent() {
   const router = useRouter();
   const token = searchParams.get("token") || "";
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(token));
   const [tokenValid, setTokenValid] = useState(false);
   const [targetUser, setTargetUser] = useState<string | null>(null);
-  const [tokenError, setTokenError] = useState<string | null>(null);
+  const [tokenError, setTokenError] = useState<string | null>(
+    token ? null : "Geçersiz veya eksik şifre sıfırlama bağlantısı."
+  );
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -22,17 +24,14 @@ function ResetPasswordContent() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      setTokenValid(false);
-      setTokenError("Geçersiz veya eksik şifre sıfırlama bağlantısı.");
-      return;
-    }
+    if (!token) return;
 
+    let active = true;
     async function checkToken() {
       try {
         const res = await fetch(`/api/auth/validate-reset-token?token=${encodeURIComponent(token)}`);
         const data = await res.json();
+        if (!active) return;
         if (res.ok && data.valid) {
           setTokenValid(true);
           setTargetUser(data.username || null);
@@ -40,15 +39,19 @@ function ResetPasswordContent() {
           setTokenValid(false);
           setTokenError(data.message || "Bu bağlantının süresi dolmuş veya daha önce kullanılmış.");
         }
-      } catch (err: any) {
+      } catch {
+        if (!active) return;
         setTokenValid(false);
         setTokenError("Bağlantı doğrulanamadı. Lütfen tekrar deneyin.");
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
 
     checkToken();
+    return () => {
+      active = false;
+    };
   }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,8 +85,8 @@ function ResetPasswordContent() {
       setTimeout(() => {
         router.push("/giris");
       }, 3000);
-    } catch (err: any) {
-      setSubmitError(err.message || "Şifre güncellenirken bir sorun oluştu.");
+    } catch (err: unknown) {
+      setSubmitError(err instanceof Error ? err.message : "Şifre güncellenirken bir sorun oluştu.");
     } finally {
       setSubmitting(false);
     }
