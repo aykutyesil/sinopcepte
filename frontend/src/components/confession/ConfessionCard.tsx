@@ -138,12 +138,12 @@ export function ConfessionCard({
   return (
     <article
       data-testid="confession-card"
-      className="p-4 sm:p-5 rounded-3xl bg-[#090c1a] border border-slate-800/80 hover:border-slate-700 transition shadow-lg space-y-3.5 relative overflow-hidden"
+      className="p-4 sm:p-5 rounded-xl bg-[#111318] border border-slate-800/80 hover:border-slate-700 transition space-y-3 relative overflow-hidden"
     >
       {/* Üst Başlık & Anonim Kimlik */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-950 to-slate-900 border border-indigo-500/30 flex items-center justify-center text-xl shadow-inner shrink-0 select-none">
+          <div className="w-9 h-9 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-base shrink-0 select-none">
             {avatarEmoji(confession.aliasAvatar)}
           </div>
           <div>

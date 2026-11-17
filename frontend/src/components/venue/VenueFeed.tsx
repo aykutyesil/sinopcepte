@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { avatarEmoji } from "@/lib/avatars";
 import type { AuthUser, Item, LiveEvent } from "@/lib/types";
@@ -8,6 +8,7 @@ import { ItemCard } from "@/components/ItemCard";
 import { EventCard } from "@/components/EventCard";
 import { CheckInModal } from "@/components/CheckInModal";
 import { SelectVenueModal } from "./SelectVenueModal";
+import { sortEventsNewestFirst } from "@/lib/feed";
 
 type VenueSubFilter = "all" | "pub" | "kafe" | "etkinlik" | "tekel" | "eczane" | "taksi";
 
@@ -47,7 +48,10 @@ export function VenueFeed({
 
   const cleanQ = query.toLowerCase().trim();
 
-  const filteredEvents = events.filter((e) => {
+  // Etkinlikler sondan başa doğru (en yeni eklenen / en yeni tarihliler en başta) sıralanır
+  const sortedEvents = useMemo(() => sortEventsNewestFirst(events), [events]);
+
+  const filteredEvents = sortedEvents.filter((e) => {
     if (subFilter !== "all" && subFilter !== "etkinlik") return false;
     if (!cleanQ) return true;
     return (
@@ -86,17 +90,17 @@ export function VenueFeed({
   return (
     <div className="space-y-4">
       {/* Twitter (X) Tarzı Sade Check-In Kutusu */}
-      <section className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 shadow-xs dark:shadow-none flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-transparent flex items-center justify-center text-base shrink-0 select-none">
+      <section className="p-3 sm:p-4 rounded-xl bg-[#111318] border border-slate-800/80 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-slate-800 text-slate-300 border border-slate-700 flex items-center justify-center text-base shrink-0 select-none">
           {me ? avatarEmoji(me.avatar) : "👤"}
         </div>
         <button
           type="button"
           onClick={handleQuickCheckinClick}
-          className="flex-1 text-left px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-200/90 dark:border-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700 text-xs sm:text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 transition flex items-center justify-between"
+          className="flex-1 text-left px-3.5 py-2 rounded-lg bg-[#0c0e14] hover:bg-slate-900 border border-slate-800/80 text-xs sm:text-sm text-slate-400 hover:text-slate-300 transition flex items-center justify-between"
         >
           <span className="truncate">📍 Şu an hangi mekandasın? Bir check-in bırak...</span>
-          <span className="hidden xs:inline-block px-2.5 py-1 rounded-lg bg-slate-900 text-white dark:bg-white dark:text-slate-950 font-bold text-xs shrink-0 ml-2 shadow-xs">
+          <span className="hidden xs:inline-block px-2.5 py-1 rounded-md bg-white text-slate-950 font-bold text-xs shrink-0 ml-2">
             Check-in
           </span>
         </button>
@@ -113,8 +117,8 @@ export function VenueFeed({
               onClick={() => setSubFilter(f.key)}
               className={`transition shrink-0 ${
                 isSelected
-                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 font-semibold text-xs px-3 py-1.5 rounded-lg shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-900 text-xs px-3 py-1.5 rounded-lg border border-transparent"
+                  ? "bg-white text-slate-950 font-semibold text-xs px-3 py-1.5 rounded-lg"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-900 text-xs px-3 py-1.5 rounded-lg border border-transparent"
               }`}
             >
               {f.label}

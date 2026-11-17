@@ -51,7 +51,7 @@ export function MarketplaceFeed({
   return (
     <div className="space-y-4">
       {/* Twitter (X) Tarzı Sade İlan Kutusu */}
-      <section className="p-3 sm:p-4 rounded-2xl bg-[#0c0f17] border border-slate-800/80 flex items-center gap-3">
+      <section className="p-3 sm:p-4 rounded-xl bg-[#111318] border border-slate-800/80 flex items-center gap-3">
         <div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-base shrink-0 select-none">
           {me ? avatarEmoji(me.avatar) : "📦"}
         </div>
@@ -125,7 +125,7 @@ export function MarketplaceFeed({
             return (
               <article
                 key={item.id}
-                className={`p-4 sm:p-5 rounded-2xl bg-[#0c0f17] border transition space-y-3 ${
+                className={`p-4 sm:p-5 rounded-xl bg-[#111318] border transition space-y-3 ${
                   item.status === "sold"
                     ? "border-slate-800/60 opacity-60"
                     : "border-slate-800/80 hover:border-slate-700"

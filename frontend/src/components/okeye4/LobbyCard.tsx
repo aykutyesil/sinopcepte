@@ -72,7 +72,7 @@ export function LobbyCard({
   }, [lobby]);
 
   return (
-    <article className="rounded-3xl p-4 sm:p-5 bg-gradient-to-br from-[#0e1329] to-[#080b18] border border-slate-800 hover:border-slate-700 shadow-xl transition-all relative overflow-hidden group">
+    <article className="rounded-xl p-4 sm:p-5 bg-[#111318] border border-slate-800/80 hover:border-slate-700 transition relative overflow-hidden group">
       {/* Üst Kategori ve Durum Şeridi */}
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-1.5 flex-wrap">

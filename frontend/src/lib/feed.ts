@@ -16,6 +16,20 @@ export interface FeedResult {
 }
 
 /**
+ * Akıştaki etkinlikleri sondan başa doğru (en yeni tarihliler / en son eklenenler en başta) sıralar.
+ */
+export function sortEventsNewestFirst(events: readonly LiveEvent[]): LiveEvent[] {
+  return [...events].sort((a, b) => {
+    const aNum = parseInt(a.id.replace(/\D/g, ""), 10);
+    const bNum = parseInt(b.id.replace(/\D/g, ""), 10);
+    if (!isNaN(aNum) && !isNaN(bNum) && aNum !== bNum) {
+      return bNum - aNum;
+    }
+    return b.id.localeCompare(a.id);
+  });
+}
+
+/**
  * - Arama (kırpılmış sorgu boş değilse): legacy gibi filtreyi YOK SAYAR; tüm etkinlik ve
  *   tüm item'lar içinde arar (`renderFeedStream(filteredEvents, filteredItems)`).
  * - Aksi halde: etkinlikler yalnız `all`/`etkinlik` için; item'lar `all` ise hepsi, değilse

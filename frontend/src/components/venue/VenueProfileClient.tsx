@@ -16,6 +16,7 @@ import {
 } from "@/lib/venue-profile";
 import { getCheckInState, formatTimeAtVenue, type VenueCheckInState } from "@/lib/checkin";
 import { CheckInModal } from "@/components/CheckInModal";
+import { sortEventsNewestFirst } from "@/lib/feed";
 import { EditVenueModal } from "./EditVenueModal";
 import { CreateVenueEventModal } from "./CreateVenueEventModal";
 import { ClaimVenueModal } from "./ClaimVenueModal";
@@ -71,7 +72,7 @@ export function VenueProfileClient({
   const currentHandle = me?.handle || me?.username;
   const isOwner = isVenueOwner(currentHandle, profile.itemId);
 
-  // Mekana ait etkinlikler (Portal etkinlikleri + mekan sahibinin ekledikleri)
+  // Mekana ait etkinlikler (Portal etkinlikleri + mekan sahibinin ekledikleri - en yeni en başta)
   const venueEvents = useMemo(() => {
     const fromPortal = allEvents.filter(
       (e) =>
@@ -79,7 +80,7 @@ export function VenueProfileClient({
         profile.title.toLowerCase().includes(e.venue.toLowerCase())
     );
     const custom = getVenueEvents(profile.itemId).map(toLiveEvent);
-    return [...custom, ...fromPortal];
+    return sortEventsNewestFirst([...custom, ...fromPortal]);
   }, [allEvents, profile.itemId, profile.title]);
 
   const venueSwarm = checkInState[profile.itemId];

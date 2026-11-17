@@ -1,14 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import type { LoadState, Pharmacy } from "@/lib/types";
 import type { WeatherNow } from "@/lib/weather";
 import { weatherIconOf, weatherTemp } from "@/hooks/useWeather";
 import { useNotifications } from "@/hooks/useNotifications";
-import { useThemePreference } from "@/hooks/useThemePreference";
 import { MobileRadarStrip } from "./MobileRadarStrip";
 
-export type MainTab = "mekan" | "sosyal" | "oyunlar" | "ilanlar" | "kampus" | "taksi" | "kesfet";
+export type MainTab = "mekan" | "sosyal" | "oyunlar" | "ilanlar" | "kampus" | "taksi" | "dolmus" | "kesfet";
 
 export const MAIN_TABS: { key: MainTab; label: string }[] = [
   { key: "mekan", label: "Mekanlar" },
@@ -17,6 +15,7 @@ export const MAIN_TABS: { key: MainTab; label: string }[] = [
   { key: "ilanlar", label: "2. El İlanlar" },
   { key: "kampus", label: "🎓 SNÜ Notlar" },
   { key: "taksi", label: "🚖 Ortak Taksi" },
+  { key: "dolmus", label: "🚐 Dolmuş Saatleri" },
   { key: "kesfet", label: "Keşfet & Rehber" },
 ];
 
@@ -27,8 +26,6 @@ export function FeedHeader({
   pharmacy,
   pharmacyState,
   onOpenNotifications,
-  activeTab = "mekan",
-  onTabChange,
 }: {
   query: string;
   onQuery: (q: string) => void;
@@ -42,15 +39,14 @@ export function FeedHeader({
   const handleInput = (val: string) => onQuery((val || "").trim() ? val : "");
   const searching = query.trim() !== "";
   const { unreadCount } = useNotifications();
-  const theme = useThemePreference();
 
   return (
-    <div className="sticky top-0 z-20 backdrop-blur-xl bg-[#f8fafc]/90 dark:bg-[#090b14]/95 pb-2 mb-3 border-b border-slate-200/90 dark:border-slate-800/80 transition-colors">
+    <div className="sticky top-0 z-20 backdrop-blur-xl bg-[#090a0f]/90 pb-2 mb-3 border-b border-slate-800/80">
       <div className="flex items-center justify-between gap-2 mb-2.5">
         {/* Sol: Başlık + Minik Canlı Noktası */}
         <div className="min-w-0 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" title="Canlı Akış Aktif" />
-          <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight truncate">
+          <h1 className="text-base sm:text-lg font-bold text-white tracking-tight truncate">
             Sinop Canlı Akışı
           </h1>
         </div>
@@ -59,38 +55,18 @@ export function FeedHeader({
         <div className="flex items-center gap-2 shrink-0">
           {/* Hava Durumu Sade Text Rozet */}
           <div
-            className="lg:hidden inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 font-mono text-[11px]"
+            className="lg:hidden inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-slate-800 bg-[#111318] text-slate-300 font-mono text-[11px]"
             title={weather ? `${weather.condition} • Rüzgar: ${weather.windSpeed} km/s • Nem: %${weather.humidity}` : "Sinop Canlı Hava Durumu"}
           >
             <span>{weatherTemp(weather)}</span>
             <span>{weatherIconOf(weather)}</span>
           </div>
 
-          {/* Hızlı Tema Değiştirme Butonu (☀️/🌙) */}
-          <button
-            type="button"
-            onClick={theme.toggle}
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 transition"
-            title={`Tema: ${theme.isDark ? "Açık Moda Geç" : "Koyu Moda Geç"}`}
-            aria-label="Tema Değiştir"
-          >
-            <span className="text-sm leading-none">{theme.isDark ? "☀️" : "🌙"}</span>
-          </button>
-
-          {/* Aykut Oku Butonu */}
-          <Link
-            href="/aykut-burayi-oku"
-            className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-transparent text-slate-700 dark:text-slate-300 text-xs px-2.5 py-1 rounded-lg hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-950 dark:hover:text-white transition inline-flex items-center gap-1 font-medium shadow-xs"
-            title="Aykut Burayı Oku (Rehber)"
-          >
-            <span>Aykut Oku</span>
-          </Link>
-
           {/* Bildirim Butonu */}
           <button
             type="button"
             onClick={onOpenNotifications}
-            className="relative p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 transition"
+            className="relative p-1.5 rounded-lg border border-slate-800 bg-[#111318] text-slate-400 hover:text-white hover:border-slate-700 transition"
             title="Bildirimler"
             aria-label="Bildirimler"
           >
@@ -105,8 +81,8 @@ export function FeedHeader({
       </div>
 
       {/* Minimalist Arama Girişi */}
-      <div className="bg-white dark:bg-slate-900/60 border border-slate-200/90 dark:border-slate-800 rounded-xl px-3.5 py-2 flex items-center gap-2.5 focus-within:border-cyan-500 dark:focus-within:border-slate-600 shadow-xs dark:shadow-none transition">
-        <svg className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="bg-[#111318] border border-slate-800/80 rounded-xl px-3.5 py-2 flex items-center gap-2.5 focus-within:border-slate-600 transition">
+        <svg className="w-4 h-4 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
@@ -114,13 +90,13 @@ export function FeedHeader({
           value={query}
           onChange={(e) => handleInput(e.target.value)}
           placeholder="Mekan, etkinlik, nöbetçi eczane veya 2. el ara..."
-          className="w-full bg-transparent text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden font-normal"
+          className="w-full bg-transparent text-sm text-slate-100 placeholder-slate-500 focus:outline-hidden font-normal"
         />
         {searching && (
           <button
             type="button"
             onClick={() => onQuery("")}
-            className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 shrink-0"
+            className="text-xs text-slate-400 hover:text-white px-1.5 py-0.5 rounded bg-slate-800 shrink-0"
             aria-label="Aramayı temizle"
           >
             ✕

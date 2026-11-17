@@ -73,7 +73,7 @@ public class SecurityConfig {
         JsonSecurityHandlers handlers = new JsonSecurityHandlers();
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, "/api/items", "/api/events", "/api/pharmacy/today",
+                        .requestMatchers(HttpMethod.GET, "/api/items", "/api/events", "/api/pharmacy/today", "/api/dolmus",
                                 "/api/auth/csrf", "/api/venues", "/api/venues/**",
                                 "/api/checkins", "/api/checkins/**", "/api/okeye4/**",
                                 "/api/confessions", "/api/confessions/**",

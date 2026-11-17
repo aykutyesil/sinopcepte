@@ -72,7 +72,7 @@ export function CampusNotesFeed({ me }: { me?: AuthUser | null }) {
   return (
     <div className="space-y-4">
       {/* 🎓 Kampüs Karşılama & Paylaş Bannerı */}
-      <section className="rounded-2xl sm:rounded-3xl p-5 sm:p-6 bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-3">
+      <section className="rounded-xl p-4 sm:p-5 bg-[#111318] border border-slate-800/80 space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
             <div className="flex items-center gap-2">

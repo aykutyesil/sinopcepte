@@ -27,3 +27,6 @@ npm-debug.log*
 frontend/node_modules/
 frontend/.next/
 backend/target/
+
+# Reklam videoları (büyük dosyalar)
+reklamlar/

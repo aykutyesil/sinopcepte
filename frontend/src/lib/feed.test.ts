@@ -1,6 +1,6 @@
 // Beklenenler legacy `renderFeedStream` / `filterFeed` / `handleSearch` ve seed JSON okunarak yazıldı.
 import { describe, expect, it } from "vitest";
-import { buildFeed, displayRating, formatPhone, itemPrimaryAction } from "./feed";
+import { buildFeed, displayRating, formatPhone, itemPrimaryAction, sortEventsNewestFirst } from "./feed";
 import { buildAdminPayload, EMPTY_ADMIN_FORM } from "./admin";
 import { weatherIcon, weatherConditionText } from "./weather";
 import type { FeedFilter, Item, LiveEvent } from "./types";
@@ -181,5 +181,18 @@ describe("admin formu -> API gövdesi (legacy saveAdminItem)", () => {
         rating: "4.8",
       },
     });
+  });
+});
+
+describe("sortEventsNewestFirst — sondan başa doğru sıralama", () => {
+  it("etkinlikleri en son eklenenden en eskiye doğru (sondan başa) sıralar", () => {
+    const list: LiveEvent[] = [
+      { id: "ev-1", title: "Maç", venue: "Nihavent", location: "Sinop", date: "Bugün", badge: "CANLI", desc: "", wa: "" },
+      { id: "ev-2", title: "DJ", venue: "Mathidays", location: "Sinop", date: "Bugün", badge: "CANLI", desc: "", wa: "" },
+      { id: "ev-5", title: "Yeni Etkinlik", venue: "Cezaevi", location: "Sinop", date: "Yarın", badge: "CANLI", desc: "", wa: "" },
+      { id: "ev-3", title: "Konser", venue: "Barınak", location: "Sinop", date: "Cuma", badge: "CANLI", desc: "", wa: "" },
+    ];
+    const sorted = sortEventsNewestFirst(list);
+    expect(sorted.map((e) => e.id)).toEqual(["ev-5", "ev-3", "ev-2", "ev-1"]);
   });
 });

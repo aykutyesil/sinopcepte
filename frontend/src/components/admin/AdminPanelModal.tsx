@@ -5,6 +5,7 @@ import Link from "next/link";
 import { buildAdminPayload, EMPTY_ADMIN_FORM, resetAfterSave, type AdminForm } from "@/lib/admin";
 import { ApiError, createEvent, createItem, deleteEvent, deleteItem } from "@/lib/client-api";
 import type { Item, LiveEvent } from "@/lib/types";
+import { sortEventsNewestFirst } from "@/lib/feed";
 import { avatarEmoji } from "@/lib/avatars";
 import {
   fetchAdminConfessions,
@@ -25,6 +26,38 @@ import {
 // localStorage yerine /api/admin/*; her değişiklikten sonra sunucu verisi yenilenir.
 
 const INPUT = "w-full bg-[#080b18] border border-slate-800 rounded-xl p-2.5 text-white";
+
+function formatTurkishEventDateTime(isoStr: string): string {
+  if (!isoStr) return "";
+  const d = new Date(isoStr);
+  if (isNaN(d.getTime())) return isoStr;
+
+  const now = new Date();
+  const isToday =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const isTomorrow =
+    d.getFullYear() === tomorrow.getFullYear() &&
+    d.getMonth() === tomorrow.getMonth() &&
+    d.getDate() === tomorrow.getDate();
+
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  const timeStr = `${hours}:${minutes}`;
+
+  if (isToday) return `Bugün • ${timeStr}`;
+  if (isTomorrow) return `Yarın • ${timeStr}`;
+
+  const months = [
+    "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+    "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+  ];
+  return `${d.getDate()} ${months[d.getMonth()]} • ${timeStr}`;
+}
 
 export interface AdminUserItem {
   id: number;
@@ -61,6 +94,10 @@ export function AdminPanelModal({
   const [activeTab, setActiveTab] = useState<"catalog" | "claims" | "confessions" | "users">("catalog");
   const [form, setForm] = useState<AdminForm>(EMPTY_ADMIN_FORM);
   const [busy, setBusy] = useState(false);
+  const [rawDateTime, setRawDateTime] = useState("");
+
+  const registeredVenues = items.filter((i) => i.category === "mekan" || i.id.startsWith("m-"));
+  const otherItems = items.filter((i) => i.category !== "mekan" && !i.id.startsWith("m-"));
 
   // Sahiplik & Talepler State
   const [claims, setClaims] = useState<VenueClaimRequest[]>([]);
@@ -165,6 +202,7 @@ export function AdminPanelModal({
       else await createItem(payload.data);
       onChanged();
       setForm(resetAfterSave(form));
+      setRawDateTime("");
       alert("Kayıt başarıyla eklendi ve akışa verildi!");
     } catch (e) {
       fail(e);
@@ -304,13 +342,107 @@ export function AdminPanelModal({
                     <option value="cicek">💐 Çiçek & Hediye</option>
                   </select>
                 </div>
+                {form.category === "etkinlik" ? (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-slate-400" htmlFor="adminDateTime">Zaman / Tarih &amp; Saat</label>
+                      {form.badge && (
+                        <span className="text-[10px] text-emerald-400 font-bold">
+                          📅 {form.badge}
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      id="adminDateTime"
+                      type="datetime-local"
+                      value={rawDateTime}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setRawDateTime(val);
+                        const formatted = formatTurkishEventDateTime(val);
+                        setForm((prev) => ({ ...prev, badge: formatted }));
+                      }}
+                      className={`${INPUT} [color-scheme:dark] cursor-pointer text-slate-200`}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-slate-400 mb-1" htmlFor="adminBadge">Durum / Rozet</label>
+                    <input
+                      id="adminBadge"
+                      type="text"
+                      value={form.badge}
+                      onChange={set("badge")}
+                      placeholder="Örn: 7/24 Açık veya Paket Servis"
+                      className={INPUT}
+                    />
+                  </div>
+                )}
                 <div>
-                  <label className="block text-slate-400 mb-1" htmlFor="adminBadge">Rozet / Zaman</label>
-                  <input id="adminBadge" type="text" value={form.badge} onChange={set("badge")} placeholder="Örn: ⚽ CANLI MAÇ veya Bugün • 20:00" className={INPUT} />
-                </div>
-                <div>
-                  <label className="block text-slate-400 mb-1" htmlFor="adminLocation">Mekan / Konum</label>
-                  <input id="adminLocation" type="text" value={form.location} onChange={set("location")} placeholder="Örn: Nihavent Pub • İskele" className={INPUT} />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-slate-400" htmlFor="adminLocation">Mekan / Konum</label>
+                    <span className="text-[10px] text-cyan-400 font-bold">🏢 Kayıtlı Mekanlar ({registeredVenues.length})</span>
+                  </div>
+
+                  {/* Kayıtlı Mekan Seçim Açılır Menüsü */}
+                  <select
+                    id="adminVenueSelect"
+                    aria-label="Kayıtlı mekan seçimi"
+                    defaultValue=""
+                    onChange={(e) => {
+                      const selectedId = e.target.value;
+                      if (!selectedId) return;
+                      const v = items.find((it) => it.id === selectedId);
+                      if (v) {
+                        setForm((prev) => ({
+                          ...prev,
+                          location: `${v.title} • ${v.location}`,
+                          phone: v.phone || prev.phone,
+                          wa: v.wa || prev.wa,
+                        }));
+                      }
+                      e.target.value = "";
+                    }}
+                    className={`${INPUT} mb-1.5 border-cyan-500/50 bg-[#0c1022] text-cyan-200 focus:border-cyan-400 cursor-pointer`}
+                  >
+                    <option value="">👇 Kayıtlı bir mekan seçin (Otomatik Doldurur)...</option>
+                    {registeredVenues.length > 0 && (
+                      <optgroup label="🍸 Kayıtlı Mekanlar & Kafeler">
+                        {registeredVenues.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {v.title} ({v.location})
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {otherItems.length > 0 && (
+                      <optgroup label="📍 Diğer Kayıtlı İşletmeler">
+                        {otherItems.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {v.title} ({v.badge || v.category} - {v.location})
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+
+                  {/* Serbest Düzenleme Metin Kutusu + Datalist */}
+                  <input
+                    id="adminLocation"
+                    list="registered-venues-datalist"
+                    type="text"
+                    value={form.location}
+                    onChange={set("location")}
+                    placeholder="Örn: Nihavent Pub • İskele (veya yukarıdaki listeden seçin)"
+                    className={INPUT}
+                  />
+                  <datalist id="registered-venues-datalist">
+                    {items.map((v) => (
+                      <option key={v.id} value={`${v.title} • ${v.location}`}>
+                        {v.title} ({v.category})
+                      </option>
+                    ))}
+                  </datalist>
                 </div>
                 <div>
                   <label className="block text-slate-400 mb-1" htmlFor="adminPhone">Telefon</label>
@@ -338,7 +470,7 @@ export function AdminPanelModal({
             <div className="pt-4 border-t border-slate-800 font-mono">
               <h4 className="font-bold text-slate-400 text-xs mb-2">Kayıtlı Canlı Etkinlikler & Mekanlar</h4>
               <div className="space-y-1.5 max-h-52 overflow-y-auto text-xs">
-                {events.map((ev) => (
+                {sortEventsNewestFirst(events).map((ev) => (
                   <div key={ev.id} className="flex items-center justify-between p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-white">
                     <div>
                       <span className="font-bold">{ev.title}</span>

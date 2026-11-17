@@ -1,4 +1,4 @@
-import type { FeedResult } from "@/lib/feed";
+import { sortEventsNewestFirst, type FeedResult } from "@/lib/feed";
 import type { AuthUser } from "@/lib/types";
 import { EventCard } from "./EventCard";
 import { ItemCard } from "./ItemCard";
@@ -34,7 +34,7 @@ export function FeedStream({
         <div className="p-12 text-center text-slate-500 text-xs">Canlı akış yükleniyor...</div>
       ) : (
         <>
-          {feed.events.map((ev) => (
+          {sortEventsNewestFirst(feed.events).map((ev) => (
             <EventCard key={ev.id} ev={ev} />
           ))}
           {feed.items.map((item) => (

@@ -17,15 +17,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="tr" className={jakarta.variable} suppressHydrationWarning>
+    <html lang="tr" className={`dark ${jakarta.variable}`} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('sinopcepte_theme');if(t==='dark'){document.documentElement.classList.add('dark');}}catch(e){}})();`,
+            __html: `document.documentElement.classList.add('dark');try{localStorage.setItem('sinopcepte_theme','dark');}catch(e){}`,
           }}
         />
       </head>
-      <body className="bg-[#f8fafc] text-slate-800 dark:bg-[#080a12] dark:text-slate-100 font-sans antialiased selection:bg-rose-500 selection:text-white min-h-screen overflow-x-clip w-full max-w-full transition-colors duration-150">
+      <body className="bg-[#090a0f] text-slate-100 font-sans antialiased selection:bg-rose-500 selection:text-white min-h-screen overflow-x-clip w-full max-w-full">
         {children}
       </body>
     </html>

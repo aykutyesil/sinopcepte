@@ -82,7 +82,7 @@ export function TaxiLobbyCard({
   });
 
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c0f17] p-4 sm:p-5 shadow-sm hover:border-amber-500/40 dark:hover:border-amber-500/40 transition flex flex-col justify-between gap-4">
+    <article className="rounded-xl border border-slate-800/80 bg-[#111318] hover:border-slate-700 p-4 sm:p-5 transition flex flex-col justify-between gap-4">
       {/* Üst Kısım: Rota ve Durum Rozeti */}
       <div>
         <div className="flex items-start justify-between gap-3 mb-3">
@@ -292,6 +292,6 @@ export function TaxiLobbyCard({
           )}
         </div>
       </div>
-    </div>
+    </article>
   );
 }

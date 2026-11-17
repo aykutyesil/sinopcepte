@@ -75,7 +75,7 @@ export function CampusCard({
           : "bg-cyan-100 text-cyan-800 border-cyan-300 dark:bg-cyan-500/20 dark:text-cyan-300 dark:border-cyan-500/40";
 
   return (
-    <div className="rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-white dark:bg-[#0e1224] border border-slate-200/90 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs dark:shadow-none transition space-y-3">
+    <article className="rounded-xl p-4 sm:p-5 bg-[#111318] border border-slate-800/80 hover:border-slate-700 transition space-y-3">
       {/* Üst Kısım: Fakülte, Bölüm & Sınav Türü */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-1.5 flex-wrap min-w-0">
@@ -190,6 +190,6 @@ export function CampusCard({
           )}
         </div>
       </div>
-    </div>
+    </article>
   );
 }

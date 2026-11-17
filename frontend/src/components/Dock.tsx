@@ -5,7 +5,6 @@ import { avatarEmoji } from "@/lib/avatars";
 import type { AuthUser, FeedFilter } from "@/lib/types";
 import { isAdmin as hasAdminRole, logout } from "@/lib/client-api";
 import { useSecretClick } from "@/hooks/useSecretClick";
-import { useThemePreference } from "@/hooks/useThemePreference";
 import { useNotifications } from "@/hooks/useNotifications";
 
 // Legacy sol dock (index.html:76-139).
@@ -16,6 +15,7 @@ const NAV: { filter: FeedFilter; icon: string; label: string; badge?: string }[]
   { filter: "okeye4", icon: "🀄", label: "Okeye 4. Masaları" },
   { filter: "ilan", icon: "🏷️", label: "2. El & Öğrenci Pazarı" },
   { filter: "kampus", icon: "🎓", label: "SNÜ Kampüs & Notlar", badge: "YENİ" },
+  { filter: "dolmus", icon: "🚐", label: "Dolmuş Saatleri", badge: "YENİ" },
   { filter: "kesfet", icon: "🌟", label: "Özellikler & Rehber" },
 ];
 
@@ -45,11 +45,10 @@ export function Dock({
   const isAdmin = hasAdminRole(me ?? null);
   const secretClick = useSecretClick(onSecretTrigger);
   const onLogoClick = isAdmin ? onSecretTrigger : secretClick;
-  const theme = useThemePreference();
   const { unreadCount } = useNotifications();
 
   return (
-    <aside className="w-14 sm:w-20 md:w-60 shrink-0 border-r border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-[#070910] p-1.5 xs:p-2 sm:p-4 flex flex-col justify-between sticky top-0 h-screen self-start overflow-y-auto no-scrollbar z-30 transition-colors">
+    <aside className="w-14 sm:w-20 md:w-60 shrink-0 border-r border-slate-800/80 bg-[#090a0f] p-1.5 xs:p-2 sm:p-4 flex flex-col justify-between sticky top-0 h-screen self-start overflow-y-auto no-scrollbar z-30">
       <div>
         {/* Marka / Logo (Admin için tek tık, diğerleri için 3 Tık) */}
         <div
@@ -67,18 +66,6 @@ export function Dock({
             </span>
             <span className="block text-[9px] font-mono text-cyan-600 dark:text-cyan-400 font-bold uppercase">Canlı Şehir Akışı</span>
           </div>
-        </div>
-
-        {/* 📖 AYKUT BURAYI OKU (Öne Çıkarılmış Kılavuz) */}
-        <div className="mb-2.5">
-          <Link
-            href="/aykut-burayi-oku"
-            className="w-full p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-cyan-50 via-blue-50 to-purple-50 dark:from-cyan-950/80 dark:via-blue-950/60 dark:to-purple-950/70 border border-cyan-200/90 dark:border-cyan-400/60 hover:border-cyan-400 text-cyan-800 dark:text-cyan-200 hover:text-cyan-950 dark:hover:text-white font-black text-xs flex items-center justify-center md:justify-start gap-2.5 transition group shadow-xs"
-            title="Aykut İçin Proje Durumu & Rehberi"
-          >
-            <span className="text-base sm:text-lg group-hover:scale-115 transition shrink-0">📖</span>
-            <span className="hidden md:inline font-black tracking-tight truncate">Aykut Burayı Oku</span>
-          </Link>
         </div>
 
         {/* 🛡️ ADMIN PANELİ BUTONU (Yöneticiler için doğrudan erişim) */}
@@ -141,19 +128,8 @@ export function Dock({
         </nav>
       </div>
 
-      {/* Alt Araçlar: Tema + Hesap */}
-      <div className="space-y-2 pt-3 border-t border-slate-200/90 dark:border-slate-800/80">
-        <button
-          type="button"
-          onClick={theme.toggle}
-          className={`${TOOL} hidden sm:flex`}
-          title={`Tema Değiştir (Şu an: ${theme.isDark ? "Koyu Mod" : "Açık Mod"})`}
-          data-testid="theme-toggle"
-        >
-          <span className="shrink-0 text-base leading-none">{theme.isDark ? "☀️" : "🌙"}</span>
-          <span className="hidden md:inline">{theme.isDark ? "Açık Mod" : "Koyu Mod"}</span>
-        </button>
-
+      {/* Alt Araçlar: Hesap */}
+      <div className="pt-3 border-t border-slate-800/80">
         <AccountButton me={me} />
       </div>
     </aside>
